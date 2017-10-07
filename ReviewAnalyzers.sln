@@ -3,11 +3,16 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.26730.12
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ReviewAnalyzers", "ReviewAnalyzers\ReviewAnalyzers\ReviewAnalyzers.csproj", "{9D63381D-C2BF-4F3E-BF7B-0DB751020FEA}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ReviewAnalyzers", "ReviewAnalyzers\ReviewAnalyzers.csproj", "{9D63381D-C2BF-4F3E-BF7B-0DB751020FEA}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ReviewAnalyzers.Test", "ReviewAnalyzers\ReviewAnalyzers.Test\ReviewAnalyzers.Test.csproj", "{B6B56235-ED2C-46E6-9794-3B4F8C5C95CF}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ReviewAnalyzers.Test", "ReviewAnalyzers.Test\ReviewAnalyzers.Test.csproj", "{B6B56235-ED2C-46E6-9794-3B4F8C5C95CF}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ReviewAnalyzers.Vsix", "ReviewAnalyzers\ReviewAnalyzers.Vsix\ReviewAnalyzers.Vsix.csproj", "{A0D97084-E6A6-4A7F-B559-AC03AA5C38D4}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ReviewAnalyzers.Vsix", "ReviewAnalyzers.Vsix\ReviewAnalyzers.Vsix.csproj", "{A0D97084-E6A6-4A7F-B559-AC03AA5C38D4}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{BB69C487-45A2-43C3-9067-BA1C0AC7D179}"
+	ProjectSection(SolutionItems) = preProject
+		Common.props = Common.props
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

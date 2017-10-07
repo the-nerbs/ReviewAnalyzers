@@ -6,14 +6,15 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace TestHelper
+namespace ReviewAnalyzers.Test.Helpers
 {
     /// <summary>
-    /// Superclass of all Unit Tests for DiagnosticAnalyzers
+    /// Base class of all Unit Tests for DiagnosticAnalyzers
     /// </summary>
     public abstract partial class DiagnosticVerifier
     {
         #region To be implemented by Test classes
+
         /// <summary>
         /// Get the CSharp analyzer being tested - to be implemented in non-abstract class
         /// </summary>
@@ -29,6 +30,7 @@ namespace TestHelper
         {
             return null;
         }
+
         #endregion
 
         #region Verifier wrappers
@@ -94,6 +96,7 @@ namespace TestHelper
         #endregion
 
         #region Actual comparisons and verifications
+
         /// <summary>
         /// Checks each of the actual Diagnostics found and compares them with the corresponding DiagnosticResult in the array of expected results.
         /// Diagnostics are considered equal only if the DiagnosticResultLocation, Id, Severity, and Message of the DiagnosticResult match the actual diagnostic.
@@ -209,9 +212,11 @@ namespace TestHelper
                 }
             }
         }
+
         #endregion
 
         #region Formatting Diagnostics
+
         /// <summary>
         /// Helper method to format a Diagnostic into an easily readable string
         /// </summary>
@@ -265,6 +270,7 @@ namespace TestHelper
             }
             return builder.ToString();
         }
+
         #endregion
     }
 }

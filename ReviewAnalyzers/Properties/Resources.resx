@@ -117,16 +117,24 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="AnalyzerDescription" xml:space="preserve">
-    <value>Type names should be all uppercase.</value>
-    <comment>An optional longer localizable description of the diagnostic.</comment>
+  <data name="EmptySummary_Description" xml:space="preserve">
+    <value>All public or protected items should have a summary comment.</value>
   </data>
-  <data name="AnalyzerMessageFormat" xml:space="preserve">
-    <value>Type name '{0}' contains lowercase letters</value>
-    <comment>The format-able message the diagnostic displays.</comment>
+  <data name="EmptySummary_MessageFmt" xml:space="preserve">
+    <value>Public or protected {0} {1} has an empty summary comment.</value>
+    <comment>Arg0 is the element type.  Arg1 is the element name.</comment>
   </data>
-  <data name="AnalyzerTitle" xml:space="preserve">
-    <value>Type name contains lowercase letters</value>
-    <comment>The title of the diagnostic.</comment>
+  <data name="EmptySummary_Title" xml:space="preserve">
+    <value>Summary comment is empty.</value>
+  </data>
+  <data name="MissingSummary_Description" xml:space="preserve">
+    <value>All public or protected items should have a summary comment.</value>
+  </data>
+  <data name="MissingSummary_MessageFmt" xml:space="preserve">
+    <value>Public or protected {0} {1} is missing a summary comment.</value>
+    <comment>Arg0 is the element type.  Arg1 is the element name.</comment>
+  </data>
+  <data name="MissingSummary_Title" xml:space="preserve">
+    <value>Summary comment is missing.</value>
   </data>
 </root>

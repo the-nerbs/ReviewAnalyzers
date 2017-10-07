@@ -7,7 +7,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 
-namespace TestHelper
+namespace ReviewAnalyzers.Test.Helpers
 {
     /// <summary>
     /// Class for turning strings into documents and getting the diagnostics on them
@@ -25,7 +25,7 @@ namespace TestHelper
         internal static string VisualBasicDefaultExt = "vb";
         internal static string TestProjectName = "TestProject";
 
-        #region  Get Diagnostics
+        #region Get Diagnostics
 
         /// <summary>
         /// Given classes in the form of strings, their language, and an IDiagnosticAnlayzer to apply to it, return the diagnostics found in the string after converting it to a document.
@@ -98,6 +98,7 @@ namespace TestHelper
         #endregion
 
         #region Set up compilation and documents
+
         /// <summary>
         /// Given an array of strings as sources and a language, turn them into a project and return the documents and spans of it.
         /// </summary>
@@ -164,6 +165,7 @@ namespace TestHelper
             }
             return solution.GetProject(projectId);
         }
+
         #endregion
     }
 }

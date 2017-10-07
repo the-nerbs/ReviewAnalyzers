@@ -1,0 +1,26 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <PropertyGroup>
+    <BuildFlavor>$(Platform).$(Configuration)</BuildFlavor>
+
+    <RootBinDir>$(SolutionDir).bin\</RootBinDir>
+    <BinDir>$(RootBinDir)$(BuildFlavor)\</BinDir>
+  </PropertyGroup>
+
+  <PropertyGroup Label="Build settings">
+    <OutputPath>$(BinDir)</OutputPath>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+
+  <PropertyGroup Label="Doc XML file"
+                 Condition="'$(MSBuildProjectName.EndsWith(&quot;Test&quot;, StringComparison.OrdinalIgnoreCase))' == 'false'">
+    <DocumentationFile>$(BinDir)$(AssemblyName).xml</DocumentationFile>
+  </PropertyGroup>
+
+  <PropertyGroup Label="Static analysis">
+    <RunCodeAnalysis>true</RunCodeAnalysis>
+    <CodeAnalysisRuleSet>BasicCorrectnessRules.ruleset</CodeAnalysisRuleSet>
+  </PropertyGroup>
+
+</Project>
