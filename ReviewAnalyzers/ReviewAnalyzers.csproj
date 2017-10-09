@@ -34,8 +34,6 @@
     <CodeAnalysisRuleSet>BasicCorrectnessRules.ruleset</CodeAnalysisRuleSet>
     <DocumentationFile>$(BinDir)$(AssemblyName).xml</DocumentationFile>
   </PropertyGroup>
-  <Import Condition="exists('$(SolutionDir)Signing.props')"
-          Project="$(SolutionDir)Signing.props" />
   <ItemGroup>
     <Compile Include="BaseAnalyzer.cs" />
     <Compile Include="DiagnosticCategory.cs" />

@@ -4,14 +4,14 @@
     <id>ReviewAnalyzers</id>
     <version>1.0.0.0</version>
     <title>ReviewAnalyzers</title>
-    <authors>Nerbs</authors>
-    <owners>Nerbs</owners>
-    <licenseUrl>http://LICENSE_URL_HERE_OR_DELETE_THIS_LINE</licenseUrl>
-    <projectUrl>http://PROJECT_URL_HERE_OR_DELETE_THIS_LINE</projectUrl>
-    <iconUrl>http://ICON_URL_HERE_OR_DELETE_THIS_LINE</iconUrl>
+    <authors>the-nerbs</authors>
+    <owners>the-nerbs</owners>
+    <!--<licenseUrl>http://LICENSE_URL_HERE_OR_DELETE_THIS_LINE</licenseUrl>-->
+    <projectUrl>https://github.com/the-nerbs/ReviewAnalyzers</projectUrl>
+    <!--<iconUrl>http://ICON_URL_HERE_OR_DELETE_THIS_LINE</iconUrl>-->
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
-    <description>ReviewAnalyzers</description>
-    <releaseNotes>Summary of changes made in this release of the package.</releaseNotes>
+    <description>A C# code analyzer which finds common issues that come up during code reviews.</description>
+    <releaseNotes></releaseNotes>
     <copyright>Copyright</copyright>
     <tags>ReviewAnalyzers, analyzers</tags>
     <frameworkAssemblies>

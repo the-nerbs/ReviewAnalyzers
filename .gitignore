@@ -10,9 +10,6 @@
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
 
-# Assembly signing properties file.
-Signing.props
-
 # Build results
 [Dd]ebug/
 [Dd]ebugPublic/
