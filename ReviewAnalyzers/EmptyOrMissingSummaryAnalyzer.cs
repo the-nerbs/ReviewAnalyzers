@@ -24,14 +24,6 @@ namespace ReviewAnalyzers
     {
         internal const DiagnosticId ID = DiagnosticId.MissingOrEmptySummary;
 
-        // if an element has a single doc comment tag with one of these names, then
-        // it is considered valid since it has an alternative to a <summary>.
-        private static readonly HashSet<string> SummaryAlternatives = new HashSet<string>()
-        {
-            "inheritdoc",
-            "see",
-        };
-
 
         private static DiagnosticDescriptor MissingRule =
             new DiagnosticDescriptor(
@@ -451,42 +443,99 @@ namespace ReviewAnalyzers
                                   .OfType<DocumentationCommentTriviaSyntax>()
                                   .FirstOrDefault();
 
-            var xmlDocComments =
-                (docComments?.Content.OfType<XmlElementSyntax>() ?? Enumerable.Empty<XmlElementSyntax>())
-                .ToArray();
+            string tag, content;
 
-            var summaryElem = xmlDocComments.FirstOrDefault(
-                elem => elem.StartTag.Name.ToString() == "summary"
-            );
-
-            if (summaryElem == null)
+            if (docComments == null ||
+                !TryGetSummaryComment(docComments, out tag, out content))
             {
-                // check for the <summary> alternatives
-                if (xmlDocComments.Length == 1)
-                {
-                    string singleTag = xmlDocComments[0].StartTag.Name.ToString();
-
-                    if (SummaryAlternatives.Contains(singleTag))
-                    {
-                        return SummaryState.Valid;
-                    }
-                }
-
+                // no summary or alternatives.
                 return SummaryState.Missing;
             }
 
-
-            string summaryText = summaryElem.Content.ToString();
-
-            // replace any newline characters or comment leads (///) with a single space.
-            summaryText = Regex.Replace(summaryText, @"(\r|\n|///)", " ");
-
-            if (string.IsNullOrWhiteSpace(summaryText))
+            if (tag == "summary" &&
+                string.IsNullOrEmpty(content))
             {
+                // summary tag with empty comment.
                 return SummaryState.Empty;
             }
 
+            // summary tag with content, or an alternative
             return SummaryState.Valid;
+        }
+
+        private static bool TryGetSummaryComment(DocumentationCommentTriviaSyntax docNode, out string tag, out string content)
+        {
+            bool foundTag = false;
+            tag = null;
+            content = null;
+
+            // check elements with content
+            var elements = docNode.Content
+                                  .OfType<XmlElementSyntax>()
+                                  .ToArray();
+
+            if (elements.Length > 0)
+            {
+                // look for the summary tag first, and only if thats not found check for the alternatives
+                var summaryElem = elements
+                    .FirstOrDefault(el => el.StartTag.Name.ToString() == "summary");
+
+                if (summaryElem != null)
+                {
+                    tag = summaryElem.StartTag.Name.ToString();
+                    content = summaryElem.Content.ToString();
+                    foundTag = true;
+                }
+                else
+                {
+                    var alternative = elements
+                        .FirstOrDefault(el => SummaryAlternatives.Contains(el.StartTag.Name.ToString()));
+
+                    if (alternative != null)
+                    {
+                        tag = alternative.StartTag.Name.ToString();
+                        content = alternative.Content.ToString();
+                        foundTag = true;
+                    }
+                }
+            }
+
+            if (!foundTag)
+            {
+                // check empty elements (eg: <tag />)
+                var emptyElems = docNode.Content.OfType<XmlEmptyElementSyntax>().ToArray();
+
+                if (emptyElems.Length > 0)
+                {
+                    var summaryElem = emptyElems
+                        .FirstOrDefault(el => el.Name.ToString() == "summary");
+
+                    if (summaryElem != null)
+                    {
+                        tag = summaryElem.Name.ToString();
+                        foundTag = true;
+                    }
+                    else
+                    {
+                        var alternative = emptyElems
+                            .FirstOrDefault(el => SummaryAlternatives.Contains(el.Name.ToString()));
+
+                        if (alternative != null)
+                        {
+                            tag = alternative.Name.ToString();
+                            foundTag = true;
+                        }
+                    }
+                }
+            }
+
+            if (foundTag && content != null)
+            {
+                // replace any newline characters or comment leads (///) with a single space.
+                content = Regex.Replace(content, @"(\r|\n|///)", " ").Trim();
+            }
+
+            return foundTag;
         }
 
         private static void Report(SyntaxNodeAnalysisContext context, DiagnosticDescriptor diagnostic,
@@ -528,6 +577,15 @@ namespace ReviewAnalyzers
                 [SyntaxKind.MethodDeclaration]             = "method",
                 [SyntaxKind.OperatorDeclaration]           = "operator",
                 [SyntaxKind.PropertyDeclaration]           = "property",
+            };
+
+        // if an element has a single doc comment tag with one of these names, then
+        // it is considered valid since it has an alternative to a <summary>.
+        private static readonly HashSet<string> SummaryAlternatives =
+            new HashSet<string>()
+            {
+                "inheritdoc",
+                "see",
             };
     }
 }

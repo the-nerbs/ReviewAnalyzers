@@ -11,7 +11,9 @@ using ReviewAnalyzers.Properties;
 
 namespace ReviewAnalyzers
 {
-    //[DiagnosticAnalyzer(LanguageNames.CSharp)]
+    /// <summary>
+    /// Base class for analyzers defined in this assembly.
+    /// </summary>
     public abstract class BaseAnalyzer : DiagnosticAnalyzer
     {
         internal static string CreateIdString(DiagnosticId id)

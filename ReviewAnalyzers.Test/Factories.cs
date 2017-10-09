@@ -111,25 +111,28 @@ namespace ReviewAnalyzers.Test
         {
             return new[] {
                 // has an actual summary comment
-                new SummaryComment("/// <summary> no diagnostic here! </summary>", expectsDiagnostic: false),
+                new SummaryComment("/// <summary> no diagnostic here! </summary>", isMissing: false, isEmpty: false),
 
                 // OK alternative - Doxygen inherit from overridden member (base not verified!)
-                new SummaryComment("/// <inheritdoc />", expectsDiagnostic: false),
+                new SummaryComment("/// <inheritdoc />", isMissing: false, isEmpty: false),
 
                 // OK alternative - references a base member (base not verified!)
-                new SummaryComment("/// <see cref=\"BaseClass.Member\">", expectsDiagnostic: false),
+                new SummaryComment("/// <see cref=\"BaseClass.Member\">", isMissing: false, isEmpty: false),
 
-                // invalid - null summary comment
-                new SummaryComment("/// <summary />", expectsDiagnostic: true),
-
-                // invalid - empty summary comment
-                new SummaryComment("/// <summary></summary>", expectsDiagnostic: true),
-
-                // invalid - whitespace-only summary comment
-                new SummaryComment("/// <summary>     </summary>", expectsDiagnostic: true),
+                // invalid - no summary comment
+                new SummaryComment(string.Empty, isMissing: true, isEmpty: false),
 
                 // invalid - not a documentation comment
-                new SummaryComment("// <summary> missing the triple slash </summary>", expectsDiagnostic: true),
+                new SummaryComment("// <summary> only 2 slashes </summary>", isMissing: true, isEmpty: false),
+
+                // invalid - null summary comment
+                new SummaryComment("/// <summary />", isMissing: false, isEmpty: true),
+
+                // invalid - empty summary comment
+                new SummaryComment("/// <summary></summary>", isMissing: false, isEmpty: true),
+
+                // invalid - whitespace-only summary comment
+                new SummaryComment("/// <summary>     </summary>", isMissing: false, isEmpty: true),
             };
         }
     }

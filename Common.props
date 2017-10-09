@@ -13,14 +13,4 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
 
-  <PropertyGroup Label="Doc XML file"
-                 Condition="'$(MSBuildProjectName.EndsWith(&quot;Test&quot;, StringComparison.OrdinalIgnoreCase))' == 'false'">
-    <DocumentationFile>$(BinDir)$(AssemblyName).xml</DocumentationFile>
-  </PropertyGroup>
-
-  <PropertyGroup Label="Static analysis">
-    <RunCodeAnalysis>true</RunCodeAnalysis>
-    <CodeAnalysisRuleSet>BasicCorrectnessRules.ruleset</CodeAnalysisRuleSet>
-  </PropertyGroup>
-
 </Project>

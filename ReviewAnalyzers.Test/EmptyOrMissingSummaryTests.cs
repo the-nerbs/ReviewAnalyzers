@@ -22,48 +22,31 @@ namespace ReviewAnalyzers.Test
 
             VerifyCSharpDiagnostic(test);
         }
-
+        
 
         [CombinatorialTestMethod]
         public void TestGlobalType(
+            [StandardFactory(SummaryComments)] SummaryComment summary,
             [StandardFactory(AllObjectTypes)] string type,
             [StandardFactory(GlobalAccessLevels)] AccessLevelInfo accessLevel)
         {
             string source = $@"
-{accessLevel.Keyword} {type} NoSummary {{ }}
+{summary.Text}
+{accessLevel.Keyword} {type} Test {{ }}";
 
-/// <summary>
-/// 
-/// </summary>
-{accessLevel.Keyword} {type} EmptySummary {{ }}
-
-/// <summary>
-/// no diagnostic here!
-/// </summary>
-{accessLevel.Keyword} {type} YesSummary {{ }}
-";
-
-            int expectedColumn = accessLevel.Keyword.Length + 1 + type.Length + 2;
-
-            if (accessLevel.RequiresSummary)
+            if (summary.ExpectsDiagnostic && accessLevel.RequiresSummary)
             {
+                int line = 2 + summary.LineLength + 1;
+                int column = accessLevel.Keyword.Length + 1 + type.Length + 2;
+
                 VerifyCSharpDiagnostic(source,
                     new DiagnosticResult
                     {
                         Id = "REVIEW" + ((int)DiagnosticId.MissingOrEmptySummary).ToString("D5"),
-                        Message = string.Format(Resources.MissingSummary_MessageFmt, type, "NoSummary"),
+                        Message = string.Format(summary.ExpectedMessageFmt, type, "Test"),
                         Severity = DiagnosticSeverity.Warning,
                         Locations = new[] {
-                            new DiagnosticResultLocation("Test0.cs", 2, expectedColumn)
-                        },
-                    },
-                    new DiagnosticResult
-                    {
-                        Id = "REVIEW" + ((int)DiagnosticId.MissingOrEmptySummary).ToString("D5"),
-                        Message = string.Format(Resources.EmptySummary_MessageFmt, type, "EmptySummary"),
-                        Severity = DiagnosticSeverity.Warning,
-                        Locations = new[] {
-                            new DiagnosticResultLocation("Test0.cs", 7, expectedColumn)
+                            new DiagnosticResultLocation("Test0.cs", line, column)
                         },
                     });
             }
@@ -73,8 +56,10 @@ namespace ReviewAnalyzers.Test
             }
         }
 
+
         [CombinatorialTestMethod]
         public void TestNestedType(
+            [StandardFactory(SummaryComments)] SummaryComment summary,
             [StandardFactory(AllObjectTypes)] string type,
             [StandardFactory(MemberAccessLevels)] AccessLevelInfo accessLevel)
         {
@@ -84,41 +69,23 @@ namespace ReviewAnalyzers.Test
 /// </summary>
 public class Outer
 {{
-    {accessLevel.Keyword} {type} NoSummary {{ }}
+    {summary.Text}
+    {accessLevel.Keyword} {type} Test {{ }}
+}}";
 
-    /// <summary>
-    /// 
-    /// </summary>
-    {accessLevel.Keyword} {type} EmptySummary {{ }}
-
-    /// <summary>
-    /// no diagnostic here!
-    /// </summary>
-    {accessLevel.Keyword} {type} YesSummary {{ }}
-}}
-";
-
-            int expectedColumn = 4 + accessLevel.Keyword.Length + 1 + type.Length + 2;
-
-            if (accessLevel.RequiresSummary)
+            if (summary.ExpectsDiagnostic && accessLevel.RequiresSummary)
             {
+                int line = 7 + summary.LineLength + 1;
+                int column = 4 + accessLevel.Keyword.Length + 1 + type.Length + 2;
+
                 VerifyCSharpDiagnostic(source,
                     new DiagnosticResult
                     {
                         Id = "REVIEW" + ((int)DiagnosticId.MissingOrEmptySummary).ToString("D5"),
-                        Message = string.Format(Resources.MissingSummary_MessageFmt, type, "NoSummary"),
+                        Message = string.Format(summary.ExpectedMessageFmt, type, "Test"),
                         Severity = DiagnosticSeverity.Warning,
                         Locations = new[] {
-                            new DiagnosticResultLocation("Test0.cs", 7, expectedColumn)
-                        },
-                    },
-                    new DiagnosticResult
-                    {
-                        Id = "REVIEW" + ((int)DiagnosticId.MissingOrEmptySummary).ToString("D5"),
-                        Message = string.Format(Resources.EmptySummary_MessageFmt, type, "EmptySummary"),
-                        Severity = DiagnosticSeverity.Warning,
-                        Locations = new[] {
-                            new DiagnosticResultLocation("Test0.cs", 12, expectedColumn)
+                            new DiagnosticResultLocation("Test0.cs", line, column)
                         },
                     });
             }
@@ -131,6 +98,7 @@ public class Outer
 
         [CombinatorialTestMethod]
         public void TestClassAndStructMethods(
+            [StandardFactory(SummaryComments)] SummaryComment summary,
             [StandardFactory(ClassTypes)] string keyword,
             [StandardFactory(GlobalAccessLevels)] AccessLevelInfo typeAccessLevel,
             [StandardFactory(MemberAccessLevels)] AccessLevelInfo methodAccessLevel)
@@ -141,40 +109,23 @@ public class Outer
 /// </summary>
 {typeAccessLevel.Keyword} {keyword} Program
 {{
-    {methodAccessLevel.Keyword} void NoSummary() {{ }}
-
-    /// <summary>
-    /// 
-    /// </summary>
-    {methodAccessLevel.Keyword} void EmptySummary() {{ }}
-
-    /// <summary>
-    /// no diagnostic here!
-    /// </summary>
-    {methodAccessLevel.Keyword} void YesSummary() {{ }}
+    {summary.Text}
+    {methodAccessLevel.Keyword} void Test() {{ }}
 }}";
 
-            if (typeAccessLevel.RequiresSummary && methodAccessLevel.RequiresSummary)
+            if (summary.ExpectsDiagnostic && typeAccessLevel.RequiresSummary && methodAccessLevel.RequiresSummary)
             {
+                int line = 7 + summary.LineLength + 1;
                 int column = 4 + methodAccessLevel.Keyword.Length + 7;
 
                 VerifyCSharpDiagnostic(source,
                     new DiagnosticResult
                     {
                         Id = "REVIEW" + ((int)DiagnosticId.MissingOrEmptySummary).ToString("D5"),
-                        Message = string.Format(Resources.MissingSummary_MessageFmt, "method", "NoSummary"),
+                        Message = string.Format(summary.ExpectedMessageFmt, "method", "Test"),
                         Severity = DiagnosticSeverity.Warning,
                         Locations = new[] {
-                        new DiagnosticResultLocation("Test0.cs", 7, column)
-                        },
-                    },
-                    new DiagnosticResult
-                    {
-                        Id = "REVIEW" + ((int)DiagnosticId.MissingOrEmptySummary).ToString("D5"),
-                        Message = string.Format(Resources.EmptySummary_MessageFmt, "method", "EmptySummary"),
-                        Severity = DiagnosticSeverity.Warning,
-                        Locations = new[] {
-                        new DiagnosticResultLocation("Test0.cs", 12, column)
+                            new DiagnosticResultLocation("Test0.cs", line, column)
                         },
                     });
             }
@@ -184,99 +135,75 @@ public class Outer
             }
         }
 
+
         [CombinatorialTestMethod]
         public void TestInterfaceMethod(
+            [StandardFactory(SummaryComments)] SummaryComment summary,
             [StandardFactory(GlobalAccessLevels)] AccessLevelInfo typeAccessLevel)
         {
-            string source = @"
+            string source = $@"
 /// <summary>
 /// no diagnostic here!
 /// </summary>
 public interface Program
-{
-    void NoSummary();
+{{
+    {summary.Text}
+    void Test();
+}}";
 
-    /// <summary>
-    /// 
-    /// </summary>
-    void EmptySummary();
+            if (summary.ExpectsDiagnostic)
+            {
+                int line = 7 + summary.LineLength + 1;
 
-    /// <summary>
-    /// no diagnostic here!
-    /// </summary>
-    void YesSummary();
-}";
-
-            VerifyCSharpDiagnostic(source,
-                new DiagnosticResult
-                {
-                    Id = "REVIEW" + ((int)DiagnosticId.MissingOrEmptySummary).ToString("D5"),
-                    Message = string.Format(Resources.MissingSummary_MessageFmt, "method", "NoSummary"),
-                    Severity = DiagnosticSeverity.Warning,
-                    Locations = new[] {
-                        new DiagnosticResultLocation("Test0.cs", 7, 10)
-                    },
-                },
-                new DiagnosticResult
-                {
-                    Id = "REVIEW" + ((int)DiagnosticId.MissingOrEmptySummary).ToString("D5"),
-                    Message = string.Format(Resources.EmptySummary_MessageFmt, "method", "EmptySummary"),
-                    Severity = DiagnosticSeverity.Warning,
-                    Locations = new[] {
-                        new DiagnosticResultLocation("Test0.cs", 12, 10)
-                    },
-                });
+                VerifyCSharpDiagnostic(source,
+                    new DiagnosticResult
+                    {
+                        Id = "REVIEW" + ((int)DiagnosticId.MissingOrEmptySummary).ToString("D5"),
+                        Message = string.Format(summary.ExpectedMessageFmt, "method", "Test"),
+                        Severity = DiagnosticSeverity.Warning,
+                        Locations = new[] {
+                        new DiagnosticResultLocation("Test0.cs", line, 10)
+                        },
+                    });
+            }
         }
 
 
         [CombinatorialTestMethod]
         public void TestClassAndStructConstructor(
+            [StandardFactory(SummaryComments)] SummaryComment summary,
             [StandardFactory(ClassTypes)] string keyword)
         {
             string source = $@"
 /// <summary>
 /// no diagnostic here!
 /// </summary>
-public {keyword} Program
+public {keyword} Test
 {{
-    public Program(int noSummary) {{  }}
-
-    /// <summary>
-    /// 
-    /// </summary>
-    public Program(double emptySummary) {{  }}
-
-    /// <summary>
-    /// no diagnostic here!
-    /// </summary>
-    public Program(string yesSummary) {{  }}
+    {summary.Text}
+    public Test() {{ }}
 }}";
+            if (summary.ExpectsDiagnostic)
+            {
+                int line = 7 + summary.LineLength + 1;
 
-            VerifyCSharpDiagnostic(source,
-                new DiagnosticResult
-                {
-                    Id = "REVIEW" + ((int)DiagnosticId.MissingOrEmptySummary).ToString("D5"),
-                    Message = string.Format(Resources.MissingSummary_MessageFmt, "constructor", "Program"),
-                    Severity = DiagnosticSeverity.Warning,
-                    Locations = new[] {
-                        new DiagnosticResultLocation("Test0.cs", 7, 12)
-                    },
-                },
-                new DiagnosticResult
-                {
-                    Id = "REVIEW" + ((int)DiagnosticId.MissingOrEmptySummary).ToString("D5"),
-                    Message = string.Format(Resources.EmptySummary_MessageFmt, "constructor", "Program"),
-                    Severity = DiagnosticSeverity.Warning,
-                    Locations = new[] {
-                        new DiagnosticResultLocation("Test0.cs", 12, 12)
-                    },
-                });
+                VerifyCSharpDiagnostic(source,
+                    new DiagnosticResult
+                    {
+                        Id = "REVIEW" + ((int)DiagnosticId.MissingOrEmptySummary).ToString("D5"),
+                        Message = string.Format(summary.ExpectedMessageFmt, "constructor", "Test"),
+                        Severity = DiagnosticSeverity.Warning,
+                        Locations = new[] {
+                            new DiagnosticResultLocation("Test0.cs", line, 12)
+                        },
+                    });
+            }
         }
-
 
 
         [CombinatorialTestMethod]
         public void TestClassAndStructConversionOperator(
+            [StandardFactory(SummaryComments)] SummaryComment summary,
             [StandardFactory(ClassTypes)] string keyword,
             [StandardFactory(ExplicitImplicit)] string explicitness)
         {
@@ -286,45 +213,32 @@ public {keyword} Program
 /// </summary>
 public {keyword} Program
 {{
+    {summary.Text}
     public static {explicitness} operator int(Program noSummary) {{ return 0; }}
-
-    /// <summary>
-    /// 
-    /// </summary>
-    public static {explicitness} operator double(Program emptySummary) {{ return 0; }}
-
-    /// <summary>
-    /// no diagnostic here!
-    /// </summary>
-    public static {explicitness} operator string(Program yesSummary) {{ return 0; }}
 }}";
 
-            int column = 18 + explicitness.Length + 2;
+            if (summary.ExpectsDiagnostic)
+            {
+                int line = 7 + summary.LineLength + 1;
+                int column = 18 + explicitness.Length + 2;
 
-            VerifyCSharpDiagnostic(source,
-                new DiagnosticResult
-                {
-                    Id = "REVIEW" + ((int)DiagnosticId.MissingOrEmptySummary).ToString("D5"),
-                    Message = string.Format(Resources.MissingSummary_MessageFmt, string.Empty, "operator int"),
-                    Severity = DiagnosticSeverity.Warning,
-                    Locations = new[] {
-                        new DiagnosticResultLocation("Test0.cs", 7, column)
-                    },
-                },
-                new DiagnosticResult
-                {
-                    Id = "REVIEW" + ((int)DiagnosticId.MissingOrEmptySummary).ToString("D5"),
-                    Message = string.Format(Resources.EmptySummary_MessageFmt, string.Empty, "operator double"),
-                    Severity = DiagnosticSeverity.Warning,
-                    Locations = new[] {
-                        new DiagnosticResultLocation("Test0.cs", 12, column)
-                    },
-                });
+                VerifyCSharpDiagnostic(source,
+                    new DiagnosticResult
+                    {
+                        Id = "REVIEW" + ((int)DiagnosticId.MissingOrEmptySummary).ToString("D5"),
+                        Message = string.Format(summary.ExpectedMessageFmt, string.Empty, "operator int"),
+                        Severity = DiagnosticSeverity.Warning,
+                        Locations = new[] {
+                            new DiagnosticResultLocation("Test0.cs", line, column)
+                        },
+                    });
+            }
         }
 
 
         [CombinatorialTestMethod]
         public void TestMembersOfGlobalEnum(
+            [StandardFactory(SummaryComments)] SummaryComment summary,
             [StandardFactory(GlobalAccessLevels)] AccessLevelInfo accessLevel)
         {
             string source = $@"
@@ -333,39 +247,22 @@ public {keyword} Program
 /// </summary>
 {accessLevel.Keyword} enum Program
 {{
-    NoSummary,
-
-    /// <summary>
-    /// 
-    /// </summary>
-    EmptySummary,
-
-    /// <summary>
-    /// no diagnostic here!
-    /// </summary>
-    YesSummary,
+    {summary.Text}
+    Test,
 }}";
 
-            if (accessLevel.RequiresSummary)
+            if (summary.ExpectsDiagnostic && accessLevel.RequiresSummary)
             {
+                int line = 7 + summary.LineLength + 1;
 
                 VerifyCSharpDiagnostic(source,
                     new DiagnosticResult
                     {
                         Id = "REVIEW" + ((int)DiagnosticId.MissingOrEmptySummary).ToString("D5"),
-                        Message = string.Format(Resources.MissingSummary_MessageFmt, "enum member", "NoSummary"),
+                        Message = string.Format(summary.ExpectedMessageFmt, "enum member", "Test"),
                         Severity = DiagnosticSeverity.Warning,
                         Locations = new[] {
-                        new DiagnosticResultLocation("Test0.cs", 7, 5)
-                        },
-                    },
-                    new DiagnosticResult
-                    {
-                        Id = "REVIEW" + ((int)DiagnosticId.MissingOrEmptySummary).ToString("D5"),
-                        Message = string.Format(Resources.EmptySummary_MessageFmt, "enum member", "EmptySummary"),
-                        Severity = DiagnosticSeverity.Warning,
-                        Locations = new[] {
-                        new DiagnosticResultLocation("Test0.cs", 12, 5)
+                            new DiagnosticResultLocation("Test0.cs", line, 5)
                         },
                     });
             }
@@ -375,8 +272,10 @@ public {keyword} Program
             }
         }
 
+
         [CombinatorialTestMethod]
         public void TestMembersOfNestedEnum(
+            [StandardFactory(SummaryComments)] SummaryComment summary,
             [StandardFactory(GlobalAccessLevels)] AccessLevelInfo outerAccessLevel,
             [StandardFactory(MemberAccessLevels)] AccessLevelInfo enumAccessLevel)
         {
@@ -391,39 +290,23 @@ public {keyword} Program
     /// </summary>
     {enumAccessLevel.Keyword} enum Program
     {{
-        NoSummary,
-
-        /// <summary>
-        /// 
-        /// </summary>
-        EmptySummary,
-
-        /// <summary>
-        /// no diagnostic here!
-        /// </summary>
-        YesSummary,
+        {summary.Text}
+        Test,
     }}
 }}";
 
-            if (outerAccessLevel.RequiresSummary && enumAccessLevel.RequiresSummary)
+            if (summary.ExpectsDiagnostic && outerAccessLevel.RequiresSummary && enumAccessLevel.RequiresSummary)
             {
+                int line = 12 + summary.LineLength + 1;
+
                 VerifyCSharpDiagnostic(source,
                     new DiagnosticResult
                     {
                         Id = "REVIEW" + ((int)DiagnosticId.MissingOrEmptySummary).ToString("D5"),
-                        Message = string.Format(Resources.MissingSummary_MessageFmt, "enum member", "NoSummary"),
+                        Message = string.Format(summary.ExpectedMessageFmt, "enum member", "Test"),
                         Severity = DiagnosticSeverity.Warning,
                         Locations = new[] {
-                        new DiagnosticResultLocation("Test0.cs", 12, 9)
-                        },
-                    },
-                    new DiagnosticResult
-                    {
-                        Id = "REVIEW" + ((int)DiagnosticId.MissingOrEmptySummary).ToString("D5"),
-                        Message = string.Format(Resources.EmptySummary_MessageFmt, "enum member", "EmptySummary"),
-                        Severity = DiagnosticSeverity.Warning,
-                        Locations = new[] {
-                        new DiagnosticResultLocation("Test0.cs", 17, 9)
+                            new DiagnosticResultLocation("Test0.cs", line, 9)
                         },
                     });
             }
@@ -436,6 +319,7 @@ public {keyword} Program
 
         [CombinatorialTestMethod]
         public void TestEventPropertyDeclaration(
+            [StandardFactory(SummaryComments)] SummaryComment summary,
             [StandardFactory(GlobalAccessLevels)] AccessLevelInfo outerAccessLevel,
             [StandardFactory(MemberAccessLevels)] AccessLevelInfo eventAccessLevel)
         {
@@ -445,52 +329,27 @@ public {keyword} Program
 /// </summary>
 {outerAccessLevel.Keyword} class Outer
 {{
-    {eventAccessLevel.Keyword} event EventHandler NoSummary
-    {{
-        add {{ }}
-        remove {{ }}
-    }}
-
-    /// <summary>
-    /// 
-    /// </summary>
-    {eventAccessLevel.Keyword} event EventHandler EmptySummary
-    {{
-        add {{ }}
-        remove {{ }}
-    }}
-
-    /// <summary>
-    /// no diagnostic here!
-    /// </summary>
-    {eventAccessLevel.Keyword} event EventHandler YesSummary
+    {summary.Text}
+    {eventAccessLevel.Keyword} event EventHandler Test
     {{
         add {{ }}
         remove {{ }}
     }}
 }}";
 
-            if (outerAccessLevel.RequiresSummary && eventAccessLevel.RequiresSummary)
+            if (summary.ExpectsDiagnostic && outerAccessLevel.RequiresSummary && eventAccessLevel.RequiresSummary)
             {
+                int line = 7 + summary.LineLength + 1;
                 int column = 4 + eventAccessLevel.Keyword.Length + 21;
 
                 VerifyCSharpDiagnostic(source,
                     new DiagnosticResult
                     {
                         Id = "REVIEW" + ((int)DiagnosticId.MissingOrEmptySummary).ToString("D5"),
-                        Message = string.Format(Resources.MissingSummary_MessageFmt, "event", "NoSummary"),
+                        Message = string.Format(summary.ExpectedMessageFmt, "event", "Test"),
                         Severity = DiagnosticSeverity.Warning,
                         Locations = new[] {
-                        new DiagnosticResultLocation("Test0.cs", 7, column)
-                        },
-                    },
-                    new DiagnosticResult
-                    {
-                        Id = "REVIEW" + ((int)DiagnosticId.MissingOrEmptySummary).ToString("D5"),
-                        Message = string.Format(Resources.EmptySummary_MessageFmt, "event", "EmptySummary"),
-                        Severity = DiagnosticSeverity.Warning,
-                        Locations = new[] {
-                        new DiagnosticResultLocation("Test0.cs", 16, column)
+                            new DiagnosticResultLocation("Test0.cs", line, column)
                         },
                     });
             }
@@ -503,6 +362,7 @@ public {keyword} Program
 
         [CombinatorialTestMethod]
         public void TestEventFieldDeclaration(
+            [StandardFactory(SummaryComments)] SummaryComment summary,
             [StandardFactory(GlobalAccessLevels)] AccessLevelInfo outerAccessLevel,
             [StandardFactory(MemberAccessLevels)] AccessLevelInfo eventAccessLevel)
         {
@@ -512,39 +372,23 @@ public {keyword} Program
 /// </summary>
 {outerAccessLevel.Keyword} class Outer
 {{
-    {eventAccessLevel.Keyword} event EventHandler NoSummary;
-
-    /// <summary>
-    /// 
-    /// </summary>
-    {eventAccessLevel.Keyword} event EventHandler EmptySummary;
-
-    /// <summary>
-    /// no diagnostic here!
-    /// </summary>
-    {eventAccessLevel.Keyword} event EventHandler YesSummary;
+    {summary.Text}
+    {eventAccessLevel.Keyword} event EventHandler Test;
 }}";
 
-            if (outerAccessLevel.RequiresSummary && eventAccessLevel.RequiresSummary)
+            if (summary.ExpectsDiagnostic && outerAccessLevel.RequiresSummary && eventAccessLevel.RequiresSummary)
             {
+                int line = 7 + summary.LineLength + 1;
                 int column = 4 + eventAccessLevel.Keyword.Length + 21;
+
                 VerifyCSharpDiagnostic(source,
                     new DiagnosticResult
                     {
                         Id = "REVIEW" + ((int)DiagnosticId.MissingOrEmptySummary).ToString("D5"),
-                        Message = string.Format(Resources.MissingSummary_MessageFmt, "event", "NoSummary"),
+                        Message = string.Format(summary.ExpectedMessageFmt, "event", "Test"),
                         Severity = DiagnosticSeverity.Warning,
                         Locations = new[] {
-                        new DiagnosticResultLocation("Test0.cs", 7, column)
-                        },
-                    },
-                    new DiagnosticResult
-                    {
-                        Id = "REVIEW" + ((int)DiagnosticId.MissingOrEmptySummary).ToString("D5"),
-                        Message = string.Format(Resources.EmptySummary_MessageFmt, "event", "EmptySummary"),
-                        Severity = DiagnosticSeverity.Warning,
-                        Locations = new[] {
-                        new DiagnosticResultLocation("Test0.cs", 12, column)
+                            new DiagnosticResultLocation("Test0.cs", line, column)
                         },
                     });
             }
@@ -557,6 +401,7 @@ public {keyword} Program
 
         [CombinatorialTestMethod]
         public void TestFieldDeclaration(
+            [StandardFactory(SummaryComments)] SummaryComment summary,
             [StandardFactory(GlobalAccessLevels)] AccessLevelInfo outerAccessLevel,
             [StandardFactory(MemberAccessLevels)] AccessLevelInfo eventAccessLevel)
         {
@@ -566,39 +411,22 @@ public {keyword} Program
 /// </summary>
 {outerAccessLevel.Keyword} class Outer
 {{
-    {eventAccessLevel.Keyword} int NoSummary;
-
-    /// <summary>
-    /// 
-    /// </summary>
-    {eventAccessLevel.Keyword} int EmptySummary;
-
-    /// <summary>
-    /// no diagnostic here!
-    /// </summary>
-    {eventAccessLevel.Keyword} int YesSummary;
+    {summary.Text}
+    {eventAccessLevel.Keyword} int Test;
 }}";
 
-            if (outerAccessLevel.RequiresSummary && eventAccessLevel.RequiresSummary)
+            if (summary.ExpectsDiagnostic && outerAccessLevel.RequiresSummary && eventAccessLevel.RequiresSummary)
             {
+                int line = 7 + summary.LineLength + 1;
                 int column = 4 + eventAccessLevel.Keyword.Length + 6;
                 VerifyCSharpDiagnostic(source,
                     new DiagnosticResult
                     {
                         Id = "REVIEW" + ((int)DiagnosticId.MissingOrEmptySummary).ToString("D5"),
-                        Message = string.Format(Resources.MissingSummary_MessageFmt, "field", "NoSummary"),
+                        Message = string.Format(summary.ExpectedMessageFmt, "field", "Test"),
                         Severity = DiagnosticSeverity.Warning,
                         Locations = new[] {
-                        new DiagnosticResultLocation("Test0.cs", 7, column)
-                        },
-                    },
-                    new DiagnosticResult
-                    {
-                        Id = "REVIEW" + ((int)DiagnosticId.MissingOrEmptySummary).ToString("D5"),
-                        Message = string.Format(Resources.EmptySummary_MessageFmt, "field", "EmptySummary"),
-                        Severity = DiagnosticSeverity.Warning,
-                        Locations = new[] {
-                        new DiagnosticResultLocation("Test0.cs", 12, column)
+                            new DiagnosticResultLocation("Test0.cs", line, column)
                         },
                     });
             }
@@ -611,6 +439,7 @@ public {keyword} Program
 
         [CombinatorialTestMethod]
         public void TestIndexerDeclaration(
+            [StandardFactory(SummaryComments)] SummaryComment summary,
             [StandardFactory(GlobalAccessLevels)] AccessLevelInfo outerAccessLevel,
             [StandardFactory(MemberAccessLevels)] AccessLevelInfo eventAccessLevel)
         {
@@ -620,39 +449,23 @@ public {keyword} Program
 /// </summary>
 {outerAccessLevel.Keyword} class Outer
 {{
-    {eventAccessLevel.Keyword} int this[int noSummary] {{ set {{ }} }}
-
-    /// <summary>
-    /// 
-    /// </summary>
-    {eventAccessLevel.Keyword} int this[double emptySummary] {{ set {{ }} }}
-
-    /// <summary>
-    /// no diagnostic here!
-    /// </summary>
-    {eventAccessLevel.Keyword} int this[string yesSummary] {{ set {{ }} }}
+    {summary.Text}
+    {eventAccessLevel.Keyword} int this[int test] {{ set {{ }} }}
 }}";
 
-            if (outerAccessLevel.RequiresSummary && eventAccessLevel.RequiresSummary)
+            if (summary.ExpectsDiagnostic && outerAccessLevel.RequiresSummary && eventAccessLevel.RequiresSummary)
             {
+                int line = 7 + summary.LineLength + 1;
                 int column = 4 + eventAccessLevel.Keyword.Length + 6;
+
                 VerifyCSharpDiagnostic(source,
                     new DiagnosticResult
                     {
                         Id = "REVIEW" + ((int)DiagnosticId.MissingOrEmptySummary).ToString("D5"),
-                        Message = string.Format(Resources.MissingSummary_MessageFmt, "indexer", "this"),
+                        Message = string.Format(summary.ExpectedMessageFmt, "indexer", "this"),
                         Severity = DiagnosticSeverity.Warning,
                         Locations = new[] {
-                        new DiagnosticResultLocation("Test0.cs", 7, column)
-                        },
-                    },
-                    new DiagnosticResult
-                    {
-                        Id = "REVIEW" + ((int)DiagnosticId.MissingOrEmptySummary).ToString("D5"),
-                        Message = string.Format(Resources.EmptySummary_MessageFmt, "indexer", "this"),
-                        Severity = DiagnosticSeverity.Warning,
-                        Locations = new[] {
-                        new DiagnosticResultLocation("Test0.cs", 12, column)
+                            new DiagnosticResultLocation("Test0.cs", line, column)
                         },
                     });
             }
@@ -665,6 +478,7 @@ public {keyword} Program
 
         [CombinatorialTestMethod]
         public void TestMethodDeclaration(
+            [StandardFactory(SummaryComments)] SummaryComment summary,
             [StandardFactory(GlobalAccessLevels)] AccessLevelInfo outerAccessLevel,
             [StandardFactory(MemberAccessLevels)] AccessLevelInfo eventAccessLevel)
         {
@@ -674,39 +488,23 @@ public {keyword} Program
 /// </summary>
 {outerAccessLevel.Keyword} class Outer
 {{
-    {eventAccessLevel.Keyword} void NoSummary() {{ }}
-
-    /// <summary>
-    /// 
-    /// </summary>
-    {eventAccessLevel.Keyword} void EmptySummary() {{ }}
-
-    /// <summary>
-    /// no diagnostic here!
-    /// </summary>
-    {eventAccessLevel.Keyword} void YesSummary() {{ }}
+    {summary.Text}
+    {eventAccessLevel.Keyword} void Test() {{ }}
 }}";
 
-            if (outerAccessLevel.RequiresSummary && eventAccessLevel.RequiresSummary)
+            if (summary.ExpectsDiagnostic && outerAccessLevel.RequiresSummary && eventAccessLevel.RequiresSummary)
             {
+                int line = 7 + summary.LineLength + 1;
                 int column = 4 + eventAccessLevel.Keyword.Length + 7;
+
                 VerifyCSharpDiagnostic(source,
                     new DiagnosticResult
                     {
                         Id = "REVIEW" + ((int)DiagnosticId.MissingOrEmptySummary).ToString("D5"),
-                        Message = string.Format(Resources.MissingSummary_MessageFmt, "method", "NoSummary"),
+                        Message = string.Format(summary.ExpectedMessageFmt, "method", "Test"),
                         Severity = DiagnosticSeverity.Warning,
                         Locations = new[] {
-                        new DiagnosticResultLocation("Test0.cs", 7, column)
-                        },
-                    },
-                    new DiagnosticResult
-                    {
-                        Id = "REVIEW" + ((int)DiagnosticId.MissingOrEmptySummary).ToString("D5"),
-                        Message = string.Format(Resources.EmptySummary_MessageFmt, "method", "EmptySummary"),
-                        Severity = DiagnosticSeverity.Warning,
-                        Locations = new[] {
-                        new DiagnosticResultLocation("Test0.cs", 12, column)
+                            new DiagnosticResultLocation("Test0.cs", line, column)
                         },
                     });
             }
@@ -719,6 +517,7 @@ public {keyword} Program
 
         [CombinatorialTestMethod]
         public void TestUnaryOperatorDeclaration(
+            [StandardFactory(SummaryComments)] SummaryComment summary,
             [StandardFactory(GlobalAccessLevels)] AccessLevelInfo outerAccessLevel,
             [StandardFactory(OverloadableUnaryOperators)] OperatorInfo operatorInfo)
         {
@@ -728,50 +527,22 @@ public {keyword} Program
 /// </summary>
 {outerAccessLevel.Keyword} class Outer
 {{
+    {summary.Text}
     public static bool operator {operatorInfo.Token}(Outer noSummary) {{ return false; }}
-}}
-
-/// <summary>
-/// no diagnostic here!
-/// </summary>
-{outerAccessLevel.Keyword} class Outer2
-{{
-    /// <summary>
-    /// 
-    /// </summary>
-    public static bool operator {operatorInfo.Token}(Outer2 emptySummary) {{ return false; }}
-}}
-
-/// <summary>
-/// no diagnostic here!
-/// </summary>
-{outerAccessLevel.Keyword} class Outer2
-{{
-    /// <summary>
-    /// no diagnostic here!
-    /// </summary>
-    public static bool operator {operatorInfo.Token}(Outer2 yesSummary) {{ return false; }}
 }}";
 
-            if (outerAccessLevel.RequiresSummary)
+            if (summary.ExpectsDiagnostic && outerAccessLevel.RequiresSummary)
             {
+                int line = 7 + summary.LineLength + 1;
+
                 VerifyCSharpDiagnostic(source,
                     new DiagnosticResult
                     {
                         Id = "REVIEW" + ((int)DiagnosticId.MissingOrEmptySummary).ToString("D5"),
-                        Message = string.Format(Resources.MissingSummary_MessageFmt, "operator", operatorInfo.Token),
+                        Message = string.Format(summary.ExpectedMessageFmt, "operator", operatorInfo.Token),
                         Severity = DiagnosticSeverity.Warning,
                         Locations = new[] {
-                        new DiagnosticResultLocation("Test0.cs", 7, 24)
-                        },
-                    },
-                    new DiagnosticResult
-                    {
-                        Id = "REVIEW" + ((int)DiagnosticId.MissingOrEmptySummary).ToString("D5"),
-                        Message = string.Format(Resources.EmptySummary_MessageFmt, "operator", operatorInfo.Token),
-                        Severity = DiagnosticSeverity.Warning,
-                        Locations = new[] {
-                        new DiagnosticResultLocation("Test0.cs", 18, 24)
+                            new DiagnosticResultLocation("Test0.cs", line, 24)
                         },
                     });
             }
@@ -784,6 +555,7 @@ public {keyword} Program
 
         [CombinatorialTestMethod]
         public void TestBinaryOperatorDeclaration(
+            [StandardFactory(SummaryComments)] SummaryComment summary,
             [StandardFactory(GlobalAccessLevels)] AccessLevelInfo outerAccessLevel,
             [StandardFactory(OverloadableBinaryOperators)] OperatorInfo operatorInfo)
         {
@@ -793,38 +565,22 @@ public {keyword} Program
 /// </summary>
 {outerAccessLevel.Keyword} class Outer
 {{
+    {summary.Text}
     public static bool operator {operatorInfo.Token}(Outer noSummary, int i) {{ return false; }}
-
-    /// <summary>
-    /// 
-    /// </summary>
-    public static bool operator {operatorInfo.Token}(Outer emptySummary, double i) {{ return false; }}
-
-    /// <summary>
-    /// no diagnostic here!
-    /// </summary>
-    public static bool operator {operatorInfo.Token}(Outer yesSummary, string i) {{ return false; }}
 }}";
 
-            if (outerAccessLevel.RequiresSummary)
+            if (summary.ExpectsDiagnostic && outerAccessLevel.RequiresSummary)
             {
+                int line = 7 + summary.LineLength + 1;
+
                 VerifyCSharpDiagnostic(source,
                     new DiagnosticResult
                     {
                         Id = "REVIEW" + ((int)DiagnosticId.MissingOrEmptySummary).ToString("D5"),
-                        Message = string.Format(Resources.MissingSummary_MessageFmt, "operator", operatorInfo.Token),
+                        Message = string.Format(summary.ExpectedMessageFmt, "operator", operatorInfo.Token),
                         Severity = DiagnosticSeverity.Warning,
                         Locations = new[] {
-                        new DiagnosticResultLocation("Test0.cs", 7, 24)
-                        },
-                    },
-                    new DiagnosticResult
-                    {
-                        Id = "REVIEW" + ((int)DiagnosticId.MissingOrEmptySummary).ToString("D5"),
-                        Message = string.Format(Resources.EmptySummary_MessageFmt, "operator", operatorInfo.Token),
-                        Severity = DiagnosticSeverity.Warning,
-                        Locations = new[] {
-                        new DiagnosticResultLocation("Test0.cs", 12, 24)
+                            new DiagnosticResultLocation("Test0.cs", line, 24)
                         },
                     });
             }
@@ -837,6 +593,7 @@ public {keyword} Program
 
         [CombinatorialTestMethod]
         public void TestPropertyDeclaration(
+            [StandardFactory(SummaryComments)] SummaryComment summary,
             [StandardFactory(GlobalAccessLevels)] AccessLevelInfo outerAccessLevel,
             [StandardFactory(MemberAccessLevels)] AccessLevelInfo propertyAccessLevel)
         {
@@ -846,39 +603,23 @@ public {keyword} Program
 /// </summary>
 {outerAccessLevel.Keyword} class Outer
 {{
-    {propertyAccessLevel.Keyword} int NoSummary {{ get {{ return 0; }} }}
-
-    /// <summary>
-    /// 
-    /// </summary>
-    {propertyAccessLevel.Keyword} int EmptySummary {{ get {{ return 0; }} }}
-
-    /// <summary>
-    /// no diagnostic here!
-    /// </summary>
-    {propertyAccessLevel.Keyword} int YesSummary {{ get {{ return 0; }} }}
+    {summary.Text}
+    {propertyAccessLevel.Keyword} int Test {{ get {{ return 0; }} }}
 }}";
 
-            if (outerAccessLevel.RequiresSummary && propertyAccessLevel.RequiresSummary)
+            if (summary.ExpectsDiagnostic && outerAccessLevel.RequiresSummary && propertyAccessLevel.RequiresSummary)
             {
+                int line = 7 + summary.LineLength + 1;
                 int column = 4 + propertyAccessLevel.Keyword.Length + 6;
+
                 VerifyCSharpDiagnostic(source,
                     new DiagnosticResult
                     {
                         Id = "REVIEW" + ((int)DiagnosticId.MissingOrEmptySummary).ToString("D5"),
-                        Message = string.Format(Resources.MissingSummary_MessageFmt, "property", "NoSummary"),
+                        Message = string.Format(summary.ExpectedMessageFmt, "property", "Test"),
                         Severity = DiagnosticSeverity.Warning,
                         Locations = new[] {
-                        new DiagnosticResultLocation("Test0.cs", 7, column)
-                        },
-                    },
-                    new DiagnosticResult
-                    {
-                        Id = "REVIEW" + ((int)DiagnosticId.MissingOrEmptySummary).ToString("D5"),
-                        Message = string.Format(Resources.EmptySummary_MessageFmt, "property", "EmptySummary"),
-                        Severity = DiagnosticSeverity.Warning,
-                        Locations = new[] {
-                        new DiagnosticResultLocation("Test0.cs", 12, column)
+                            new DiagnosticResultLocation("Test0.cs", line, column)
                         },
                     });
             }
