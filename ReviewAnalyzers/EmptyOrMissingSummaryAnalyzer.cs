@@ -412,7 +412,8 @@ namespace ReviewAnalyzers
                     goto default;
 
                 case BasePropertyDeclarationSyntax propertyDecl:
-                    if (!HasPublicOrProtectedModifier(propertyDecl.Modifiers))
+                    if (!HasPublicOrProtectedModifier(propertyDecl.Modifiers) &&
+                        propertyDecl.Parent.Kind() != SyntaxKind.InterfaceDeclaration)
                     {
                         return false;
                     }

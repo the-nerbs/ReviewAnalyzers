@@ -27,23 +27,23 @@ namespace ReviewAnalyzers.Test
         [CombinatorialTestMethod]
         public void TestGlobalType(
             [StandardFactory(SummaryComments)] SummaryComment summary,
-            [StandardFactory(AllObjectTypes)] string type,
+            [StandardFactory(AllObjectTypes)] string outerType,
             [StandardFactory(GlobalAccessLevels)] AccessLevelInfo accessLevel)
         {
             string source = $@"
 {summary.Text}
-{accessLevel.Keyword} {type} Test {{ }}";
+{accessLevel.Keyword} {outerType} Test {{ }}";
 
             if (summary.ExpectsDiagnostic && accessLevel.RequiresSummary)
             {
                 int line = 2 + summary.LineLength + 1;
-                int column = accessLevel.Keyword.Length + 1 + type.Length + 2;
+                int column = accessLevel.Keyword.Length + 1 + outerType.Length + 2;
 
                 VerifyCSharpDiagnostic(source,
                     new DiagnosticResult
                     {
                         Id = "REVIEW" + ((int)DiagnosticId.MissingOrEmptySummary).ToString("D5"),
-                        Message = string.Format(summary.ExpectedMessageFmt, type, "Test"),
+                        Message = string.Format(summary.ExpectedMessageFmt, outerType, "Test"),
                         Severity = DiagnosticSeverity.Warning,
                         Locations = new[] {
                             new DiagnosticResultLocation("Test0.cs", line, column)
@@ -60,7 +60,7 @@ namespace ReviewAnalyzers.Test
         [CombinatorialTestMethod]
         public void TestNestedType(
             [StandardFactory(SummaryComments)] SummaryComment summary,
-            [StandardFactory(AllObjectTypes)] string type,
+            [StandardFactory(AllObjectTypes)] string outerType,
             [StandardFactory(MemberAccessLevels)] AccessLevelInfo accessLevel)
         {
             string source = $@"
@@ -70,19 +70,19 @@ namespace ReviewAnalyzers.Test
 public class Outer
 {{
     {summary.Text}
-    {accessLevel.Keyword} {type} Test {{ }}
+    {accessLevel.Keyword} {outerType} Test {{ }}
 }}";
 
             if (summary.ExpectsDiagnostic && accessLevel.RequiresSummary)
             {
                 int line = 7 + summary.LineLength + 1;
-                int column = 4 + accessLevel.Keyword.Length + 1 + type.Length + 2;
+                int column = 4 + accessLevel.Keyword.Length + 1 + outerType.Length + 2;
 
                 VerifyCSharpDiagnostic(source,
                     new DiagnosticResult
                     {
                         Id = "REVIEW" + ((int)DiagnosticId.MissingOrEmptySummary).ToString("D5"),
-                        Message = string.Format(summary.ExpectedMessageFmt, type, "Test"),
+                        Message = string.Format(summary.ExpectedMessageFmt, outerType, "Test"),
                         Severity = DiagnosticSeverity.Warning,
                         Locations = new[] {
                             new DiagnosticResultLocation("Test0.cs", line, column)
@@ -92,79 +92,6 @@ public class Outer
             else
             {
                 VerifyCSharpDiagnostic(source);
-            }
-        }
-
-
-        [CombinatorialTestMethod]
-        public void TestClassAndStructMethods(
-            [StandardFactory(SummaryComments)] SummaryComment summary,
-            [StandardFactory(ClassTypes)] string keyword,
-            [StandardFactory(GlobalAccessLevels)] AccessLevelInfo typeAccessLevel,
-            [StandardFactory(MemberAccessLevels)] AccessLevelInfo methodAccessLevel)
-        {
-            string source = $@"
-/// <summary>
-/// no diagnostic here!
-/// </summary>
-{typeAccessLevel.Keyword} {keyword} Program
-{{
-    {summary.Text}
-    {methodAccessLevel.Keyword} void Test() {{ }}
-}}";
-
-            if (summary.ExpectsDiagnostic && typeAccessLevel.RequiresSummary && methodAccessLevel.RequiresSummary)
-            {
-                int line = 7 + summary.LineLength + 1;
-                int column = 4 + methodAccessLevel.Keyword.Length + 7;
-
-                VerifyCSharpDiagnostic(source,
-                    new DiagnosticResult
-                    {
-                        Id = "REVIEW" + ((int)DiagnosticId.MissingOrEmptySummary).ToString("D5"),
-                        Message = string.Format(summary.ExpectedMessageFmt, "method", "Test"),
-                        Severity = DiagnosticSeverity.Warning,
-                        Locations = new[] {
-                            new DiagnosticResultLocation("Test0.cs", line, column)
-                        },
-                    });
-            }
-            else
-            {
-                VerifyCSharpDiagnostic(source);
-            }
-        }
-
-
-        [CombinatorialTestMethod]
-        public void TestInterfaceMethod(
-            [StandardFactory(SummaryComments)] SummaryComment summary,
-            [StandardFactory(GlobalAccessLevels)] AccessLevelInfo typeAccessLevel)
-        {
-            string source = $@"
-/// <summary>
-/// no diagnostic here!
-/// </summary>
-public interface Program
-{{
-    {summary.Text}
-    void Test();
-}}";
-
-            if (summary.ExpectsDiagnostic)
-            {
-                int line = 7 + summary.LineLength + 1;
-
-                VerifyCSharpDiagnostic(source,
-                    new DiagnosticResult
-                    {
-                        Id = "REVIEW" + ((int)DiagnosticId.MissingOrEmptySummary).ToString("D5"),
-                        Message = string.Format(summary.ExpectedMessageFmt, "method", "Test"),
-                        Severity = DiagnosticSeverity.Warning,
-                        Locations = new[] {
-                        new DiagnosticResultLocation("Test0.cs", line, 10)
-                        },
-                    });
             }
         }
 
@@ -172,13 +99,13 @@ public interface Program
         [CombinatorialTestMethod]
         public void TestClassAndStructConstructor(
             [StandardFactory(SummaryComments)] SummaryComment summary,
-            [StandardFactory(ClassTypes)] string keyword)
+            [StandardFactory(ClassTypes)] string outerType)
         {
             string source = $@"
 /// <summary>
 /// no diagnostic here!
 /// </summary>
-public {keyword} Test
+public {outerType} Test
 {{
     {summary.Text}
     public Test() {{ }}
@@ -204,14 +131,14 @@ public {keyword} Test
         [CombinatorialTestMethod]
         public void TestClassAndStructConversionOperator(
             [StandardFactory(SummaryComments)] SummaryComment summary,
-            [StandardFactory(ClassTypes)] string keyword,
+            [StandardFactory(ClassTypes)] string outerType,
             [StandardFactory(ExplicitImplicit)] string explicitness)
         {
             string source = $@"
 /// <summary>
 /// no diagnostic here!
 /// </summary>
-public {keyword} Program
+public {outerType} Program
 {{
     {summary.Text}
     public static {explicitness} operator int(Program noSummary) {{ return 0; }}
@@ -276,6 +203,7 @@ public {keyword} Program
         [CombinatorialTestMethod]
         public void TestMembersOfNestedEnum(
             [StandardFactory(SummaryComments)] SummaryComment summary,
+            [StandardFactory(ClassTypes)] string outerType,
             [StandardFactory(GlobalAccessLevels)] AccessLevelInfo outerAccessLevel,
             [StandardFactory(MemberAccessLevels)] AccessLevelInfo enumAccessLevel)
         {
@@ -283,7 +211,7 @@ public {keyword} Program
 /// <summary>
 /// no diagnostic here!
 /// </summary>
-{outerAccessLevel.Keyword} class Outer
+{outerAccessLevel.Keyword} {outerType} Outer
 {{
     /// <summary>
     /// no diagnostic here!
@@ -320,6 +248,7 @@ public {keyword} Program
         [CombinatorialTestMethod]
         public void TestEventPropertyDeclaration(
             [StandardFactory(SummaryComments)] SummaryComment summary,
+            [StandardFactory(ClassTypes)] string outerType,
             [StandardFactory(GlobalAccessLevels)] AccessLevelInfo outerAccessLevel,
             [StandardFactory(MemberAccessLevels)] AccessLevelInfo eventAccessLevel)
         {
@@ -327,7 +256,7 @@ public {keyword} Program
 /// <summary>
 /// no diagnostic here!
 /// </summary>
-{outerAccessLevel.Keyword} class Outer
+{outerAccessLevel.Keyword} {outerType} Outer
 {{
     {summary.Text}
     {eventAccessLevel.Keyword} event EventHandler Test
@@ -363,6 +292,7 @@ public {keyword} Program
         [CombinatorialTestMethod]
         public void TestEventFieldDeclaration(
             [StandardFactory(SummaryComments)] SummaryComment summary,
+            [StandardFactory(ClassTypes)] string outerType,
             [StandardFactory(GlobalAccessLevels)] AccessLevelInfo outerAccessLevel,
             [StandardFactory(MemberAccessLevels)] AccessLevelInfo eventAccessLevel)
         {
@@ -370,7 +300,7 @@ public {keyword} Program
 /// <summary>
 /// no diagnostic here!
 /// </summary>
-{outerAccessLevel.Keyword} class Outer
+{outerAccessLevel.Keyword} {outerType} Outer
 {{
     {summary.Text}
     {eventAccessLevel.Keyword} event EventHandler Test;
@@ -402,6 +332,7 @@ public {keyword} Program
         [CombinatorialTestMethod]
         public void TestFieldDeclaration(
             [StandardFactory(SummaryComments)] SummaryComment summary,
+            [StandardFactory(ClassTypes)] string outerType,
             [StandardFactory(GlobalAccessLevels)] AccessLevelInfo outerAccessLevel,
             [StandardFactory(MemberAccessLevels)] AccessLevelInfo eventAccessLevel)
         {
@@ -409,7 +340,7 @@ public {keyword} Program
 /// <summary>
 /// no diagnostic here!
 /// </summary>
-{outerAccessLevel.Keyword} class Outer
+{outerAccessLevel.Keyword} {outerType} Outer
 {{
     {summary.Text}
     {eventAccessLevel.Keyword} int Test;
@@ -440,6 +371,7 @@ public {keyword} Program
         [CombinatorialTestMethod]
         public void TestIndexerDeclaration(
             [StandardFactory(SummaryComments)] SummaryComment summary,
+            [StandardFactory(ClassTypes)] string outerType,
             [StandardFactory(GlobalAccessLevels)] AccessLevelInfo outerAccessLevel,
             [StandardFactory(MemberAccessLevels)] AccessLevelInfo eventAccessLevel)
         {
@@ -447,7 +379,7 @@ public {keyword} Program
 /// <summary>
 /// no diagnostic here!
 /// </summary>
-{outerAccessLevel.Keyword} class Outer
+{outerAccessLevel.Keyword} {outerType} Outer
 {{
     {summary.Text}
     {eventAccessLevel.Keyword} int this[int test] {{ set {{ }} }}
@@ -477,25 +409,26 @@ public {keyword} Program
 
 
         [CombinatorialTestMethod]
-        public void TestMethodDeclaration(
+        public void TestClassAndStructMethodDeclaration(
             [StandardFactory(SummaryComments)] SummaryComment summary,
-            [StandardFactory(GlobalAccessLevels)] AccessLevelInfo outerAccessLevel,
-            [StandardFactory(MemberAccessLevels)] AccessLevelInfo eventAccessLevel)
+            [StandardFactory(ClassTypes)] string outerType,
+            [StandardFactory(GlobalAccessLevels)] AccessLevelInfo typeAccessLevel,
+            [StandardFactory(MemberAccessLevels)] AccessLevelInfo methodAccessLevel)
         {
             string source = $@"
 /// <summary>
 /// no diagnostic here!
 /// </summary>
-{outerAccessLevel.Keyword} class Outer
+{typeAccessLevel.Keyword} {outerType} Program
 {{
     {summary.Text}
-    {eventAccessLevel.Keyword} void Test() {{ }}
+    {methodAccessLevel.Keyword} void Test() {{ }}
 }}";
 
-            if (summary.ExpectsDiagnostic && outerAccessLevel.RequiresSummary && eventAccessLevel.RequiresSummary)
+            if (summary.ExpectsDiagnostic && typeAccessLevel.RequiresSummary && methodAccessLevel.RequiresSummary)
             {
                 int line = 7 + summary.LineLength + 1;
-                int column = 4 + eventAccessLevel.Keyword.Length + 7;
+                int column = 4 + methodAccessLevel.Keyword.Length + 7;
 
                 VerifyCSharpDiagnostic(source,
                     new DiagnosticResult
@@ -516,8 +449,42 @@ public {keyword} Program
 
 
         [CombinatorialTestMethod]
+        public void TestInterfaceMethodDeclaration(
+            [StandardFactory(SummaryComments)] SummaryComment summary,
+            [StandardFactory(GlobalAccessLevels)] AccessLevelInfo typeAccessLevel)
+        {
+            string source = $@"
+/// <summary>
+/// no diagnostic here!
+/// </summary>
+public interface Program
+{{
+    {summary.Text}
+    void Test();
+}}";
+
+            if (summary.ExpectsDiagnostic)
+            {
+                int line = 7 + summary.LineLength + 1;
+
+                VerifyCSharpDiagnostic(source,
+                    new DiagnosticResult
+                    {
+                        Id = "REVIEW" + ((int)DiagnosticId.MissingOrEmptySummary).ToString("D5"),
+                        Message = string.Format(summary.ExpectedMessageFmt, "method", "Test"),
+                        Severity = DiagnosticSeverity.Warning,
+                        Locations = new[] {
+                        new DiagnosticResultLocation("Test0.cs", line, 10)
+                        },
+                    });
+            }
+        }
+
+
+        [CombinatorialTestMethod]
         public void TestUnaryOperatorDeclaration(
             [StandardFactory(SummaryComments)] SummaryComment summary,
+            [StandardFactory(ClassTypes)] string outerType,
             [StandardFactory(GlobalAccessLevels)] AccessLevelInfo outerAccessLevel,
             [StandardFactory(OverloadableUnaryOperators)] OperatorInfo operatorInfo)
         {
@@ -525,7 +492,7 @@ public {keyword} Program
 /// <summary>
 /// no diagnostic here!
 /// </summary>
-{outerAccessLevel.Keyword} class Outer
+{outerAccessLevel.Keyword} {outerType} Outer
 {{
     {summary.Text}
     public static bool operator {operatorInfo.Token}(Outer noSummary) {{ return false; }}
@@ -556,6 +523,7 @@ public {keyword} Program
         [CombinatorialTestMethod]
         public void TestBinaryOperatorDeclaration(
             [StandardFactory(SummaryComments)] SummaryComment summary,
+            [StandardFactory(ClassTypes)] string outerType,
             [StandardFactory(GlobalAccessLevels)] AccessLevelInfo outerAccessLevel,
             [StandardFactory(OverloadableBinaryOperators)] OperatorInfo operatorInfo)
         {
@@ -563,7 +531,7 @@ public {keyword} Program
 /// <summary>
 /// no diagnostic here!
 /// </summary>
-{outerAccessLevel.Keyword} class Outer
+{outerAccessLevel.Keyword} {outerType} Outer
 {{
     {summary.Text}
     public static bool operator {operatorInfo.Token}(Outer noSummary, int i) {{ return false; }}
@@ -594,6 +562,7 @@ public {keyword} Program
         [CombinatorialTestMethod]
         public void TestPropertyDeclaration(
             [StandardFactory(SummaryComments)] SummaryComment summary,
+            [StandardFactory(ClassTypes)] string outerType,
             [StandardFactory(GlobalAccessLevels)] AccessLevelInfo outerAccessLevel,
             [StandardFactory(MemberAccessLevels)] AccessLevelInfo propertyAccessLevel)
         {
@@ -601,7 +570,7 @@ public {keyword} Program
 /// <summary>
 /// no diagnostic here!
 /// </summary>
-{outerAccessLevel.Keyword} class Outer
+{outerAccessLevel.Keyword} {outerType} Outer
 {{
     {summary.Text}
     {propertyAccessLevel.Keyword} int Test {{ get {{ return 0; }} }}
@@ -620,6 +589,43 @@ public {keyword} Program
                         Severity = DiagnosticSeverity.Warning,
                         Locations = new[] {
                             new DiagnosticResultLocation("Test0.cs", line, column)
+                        },
+                    });
+            }
+            else
+            {
+                VerifyCSharpDiagnostic(source);
+            }
+        }
+
+
+        [CombinatorialTestMethod]
+        public void TestInterfacePropertyDeclaration(
+            [StandardFactory(SummaryComments)] SummaryComment summary,
+            [StandardFactory(GlobalAccessLevels)] AccessLevelInfo outerAccessLevel)
+        {
+            string source = $@"
+/// <summary>
+/// no diagnostic here!
+/// </summary>
+{outerAccessLevel.Keyword} interface Outer
+{{
+    {summary.Text}
+    int Test {{ get; }}
+}}";
+
+            if (summary.ExpectsDiagnostic && outerAccessLevel.RequiresSummary)
+            {
+                int line = 7 + summary.LineLength + 1;
+
+                VerifyCSharpDiagnostic(source,
+                    new DiagnosticResult
+                    {
+                        Id = "REVIEW" + ((int)DiagnosticId.MissingOrEmptySummary).ToString("D5"),
+                        Message = string.Format(summary.ExpectedMessageFmt, "property", "Test"),
+                        Severity = DiagnosticSeverity.Warning,
+                        Locations = new[] {
+                            new DiagnosticResultLocation("Test0.cs", line, 9)
                         },
                     });
             }
