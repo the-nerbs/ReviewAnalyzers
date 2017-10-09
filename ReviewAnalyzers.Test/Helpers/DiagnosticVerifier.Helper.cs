@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace ReviewAnalyzers.Test.Helpers
 {
@@ -25,6 +26,11 @@ namespace ReviewAnalyzers.Test.Helpers
         internal static string VisualBasicDefaultExt = "vb";
         internal static string TestProjectName = "TestProject";
 
+        private static readonly string ContextLogSeparatorLine = new string('-', 80);
+
+        public TestContext TestContext { get; set; }
+        
+
         #region Get Diagnostics
 
         /// <summary>
@@ -34,9 +40,52 @@ namespace ReviewAnalyzers.Test.Helpers
         /// <param name="language">The language the source classes are in</param>
         /// <param name="analyzer">The analyzer to be run on the sources</param>
         /// <returns>An IEnumerable of Diagnostics that surfaced in the source code, sorted by Location</returns>
-        private static Diagnostic[] GetSortedDiagnostics(string[] sources, string language, DiagnosticAnalyzer analyzer)
+        private Diagnostic[] GetSortedDiagnostics(string[] sources, string language, DiagnosticAnalyzer analyzer)
         {
-            return GetSortedDiagnosticsFromDocuments(analyzer, GetDocuments(sources, language));
+            Document[] documents = GetDocuments(sources, language);
+
+            if (TestContext != null)
+            {
+                foreach (var doc in documents)
+                {
+                    TestContext.WriteLine(ContextLogSeparatorLine);
+                    TestContext.WriteLine("Document: " + doc.Name);
+                    TestContext.WriteLine(ContextLogSeparatorLine);
+                    TestContext.WriteLine(doc.GetTextAsync().Result.ToString());
+                    TestContext.WriteLine(ContextLogSeparatorLine);
+                }
+            }
+
+            Diagnostic[] diagnostics = GetSortedDiagnosticsFromDocuments(analyzer, documents);
+
+            if (TestContext != null)
+            {
+                TestContext.WriteLine(string.Empty);
+                TestContext.WriteLine(ContextLogSeparatorLine);
+                TestContext.WriteLine("Actual Diagnostics:");
+
+                foreach (var d in diagnostics)
+                {
+                    FileLinePositionSpan location = d.Location.GetLineSpan();
+                    LinePosition start = location.StartLinePosition;
+                    LinePosition end = location.EndLinePosition;
+
+                    TestContext.WriteLine(ContextLogSeparatorLine);
+                    TestContext.WriteLine("Severity: " + d.Severity);
+                    TestContext.WriteLine("ID: " + d.Id);
+                    TestContext.WriteLine("Message: " + d.GetMessage());
+                    TestContext.WriteLine("Document: " + location.Path);
+
+                    // note: +1 to all these since DiagnosticResultLocation (and people
+                    // in general) use 1-based indexes, while these are 0-based indexes.
+                    TestContext.WriteLine($"Start: ln {start.Line+1}, ch {start.Character+1}");
+                    TestContext.WriteLine($"End: ln {end.Line+1}, ch {end.Character+1}");
+                }
+
+                TestContext.WriteLine(ContextLogSeparatorLine);
+            }
+
+            return diagnostics;
         }
 
         /// <summary>

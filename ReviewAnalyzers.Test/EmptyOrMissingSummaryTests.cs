@@ -6,15 +6,15 @@ using System;
 using ReviewAnalyzers;
 using ReviewAnalyzers.Test.Helpers;
 using ReviewAnalyzers.Properties;
+using MSTestExtensions;
+
+using static ReviewAnalyzers.Test.Factories;
 
 namespace ReviewAnalyzers.Test
 {
     [TestClass]
     public class EmptyOrMissingSummaryTests : DiagnosticVerifier
     {
-        public TestContext TestContext { get; set; }
-
-
         [TestMethod]
         public void TestNoSourceGivesNoWarnings()
         {
@@ -24,71 +24,59 @@ namespace ReviewAnalyzers.Test
         }
 
 
-        [DataTestMethod]
-        [DataRow("class")]
-        [DataRow("interface")]
-        [DataRow("struct")]
-        [DataRow("enum")]
-        public void TestPublicTypeNoSummary(string keyword)
+        [CombinatorialTestMethod]
+        public void TestGlobalType(
+            [StandardFactory(AllObjectTypes)] string type,
+            [StandardFactory(GlobalAccessLevels)] AccessLevelInfo accessLevel)
         {
             string source = $@"
-public {keyword} Program
-{{ }}
+{accessLevel.Keyword} {type} NoSummary {{ }}
+
+/// <summary>
+/// 
+/// </summary>
+{accessLevel.Keyword} {type} EmptySummary {{ }}
+
+/// <summary>
+/// no diagnostic here!
+/// </summary>
+{accessLevel.Keyword} {type} YesSummary {{ }}
 ";
 
-            int expectedColumn = 9 + keyword.Length;
+            int expectedColumn = accessLevel.Keyword.Length + 1 + type.Length + 2;
 
-            VerifyCSharpDiagnostic(source,
-                new DiagnosticResult
-                {
-                    Id = "REVIEW" + ((int)DiagnosticId.MissingOrEmptySummary).ToString("D5"),
-                    Message = string.Format(Resources.MissingSummary_MessageFmt, keyword, "Program"),
-                    Severity = DiagnosticSeverity.Warning,
-                    Locations = new[] {
-                        new DiagnosticResultLocation("Test0.cs", 2, expectedColumn)
+            if (accessLevel.RequiresSummary)
+            {
+                VerifyCSharpDiagnostic(source,
+                    new DiagnosticResult
+                    {
+                        Id = "REVIEW" + ((int)DiagnosticId.MissingOrEmptySummary).ToString("D5"),
+                        Message = string.Format(Resources.MissingSummary_MessageFmt, type, "NoSummary"),
+                        Severity = DiagnosticSeverity.Warning,
+                        Locations = new[] {
+                            new DiagnosticResultLocation("Test0.cs", 2, expectedColumn)
+                        },
                     },
-                });
+                    new DiagnosticResult
+                    {
+                        Id = "REVIEW" + ((int)DiagnosticId.MissingOrEmptySummary).ToString("D5"),
+                        Message = string.Format(Resources.EmptySummary_MessageFmt, type, "EmptySummary"),
+                        Severity = DiagnosticSeverity.Warning,
+                        Locations = new[] {
+                            new DiagnosticResultLocation("Test0.cs", 7, expectedColumn)
+                        },
+                    });
+            }
+            else
+            {
+                VerifyCSharpDiagnostic(source);
+            }
         }
 
-        [DataTestMethod]
-        [DataRow("class")]
-        [DataRow("interface")]
-        [DataRow("struct")]
-        [DataRow("enum")]
-        public void TestNonPublicTypeNoSummary(string keyword)
-        {
-            string source = $@"
-internal {keyword} Program
-{{ }}
-";
-
-            // no diagnostics since the type isn't public
-            VerifyCSharpDiagnostic(source);
-        }
-
-        [DataTestMethod]
-        [DataRow("class")]
-        [DataRow("interface")]
-        [DataRow("struct")]
-        [DataRow("enum")]
-        public void TestDefaultAccessibilityTypeNoSummary(string keyword)
-        {
-            string source = $@"
-{keyword} Program
-{{ }}
-";
-
-            // no diagnostics since the type isn't public
-            VerifyCSharpDiagnostic(source);
-        }
-
-
-        [DataTestMethod]
-        [DataRow("class")]
-        [DataRow("interface")]
-        [DataRow("struct")]
-        [DataRow("enum")]
-        public void TestNestedPublicTypeNoSummary(string keyword)
+        [CombinatorialTestMethod]
+        public void TestNestedType(
+            [StandardFactory(AllObjectTypes)] string type,
+            [StandardFactory(MemberAccessLevels)] AccessLevelInfo accessLevel)
         {
             string source = $@"
 /// <summary>
@@ -96,215 +84,109 @@ internal {keyword} Program
 /// </summary>
 public class Outer
 {{
-    public {keyword} Nested
-    {{ }}
+    {accessLevel.Keyword} {type} NoSummary {{ }}
+
+    /// <summary>
+    /// 
+    /// </summary>
+    {accessLevel.Keyword} {type} EmptySummary {{ }}
+
+    /// <summary>
+    /// no diagnostic here!
+    /// </summary>
+    {accessLevel.Keyword} {type} YesSummary {{ }}
 }}
 ";
 
-            int expectedColumn = 13 + keyword.Length;
+            int expectedColumn = 4 + accessLevel.Keyword.Length + 1 + type.Length + 2;
 
-            VerifyCSharpDiagnostic(source,
-                new DiagnosticResult
-                {
-                    Id = "REVIEW" + ((int)DiagnosticId.MissingOrEmptySummary).ToString("D5"),
-                    Message = string.Format(Resources.MissingSummary_MessageFmt, keyword, "Nested"),
-                    Severity = DiagnosticSeverity.Warning,
-                    Locations = new[] {
-                        new DiagnosticResultLocation("Test0.cs", 7, expectedColumn)
+            if (accessLevel.RequiresSummary)
+            {
+                VerifyCSharpDiagnostic(source,
+                    new DiagnosticResult
+                    {
+                        Id = "REVIEW" + ((int)DiagnosticId.MissingOrEmptySummary).ToString("D5"),
+                        Message = string.Format(Resources.MissingSummary_MessageFmt, type, "NoSummary"),
+                        Severity = DiagnosticSeverity.Warning,
+                        Locations = new[] {
+                            new DiagnosticResultLocation("Test0.cs", 7, expectedColumn)
+                        },
                     },
-                });
+                    new DiagnosticResult
+                    {
+                        Id = "REVIEW" + ((int)DiagnosticId.MissingOrEmptySummary).ToString("D5"),
+                        Message = string.Format(Resources.EmptySummary_MessageFmt, type, "EmptySummary"),
+                        Severity = DiagnosticSeverity.Warning,
+                        Locations = new[] {
+                            new DiagnosticResultLocation("Test0.cs", 12, expectedColumn)
+                        },
+                    });
+            }
+            else
+            {
+                VerifyCSharpDiagnostic(source);
+            }
         }
 
-        [DataTestMethod]
-        [DataRow("class")]
-        [DataRow("interface")]
-        [DataRow("struct")]
-        [DataRow("enum")]
-        public void TestNestedProtectedTypeNoSummary(string keyword)
+
+        [CombinatorialTestMethod]
+        public void TestClassAndStructMethods(
+            [StandardFactory(ClassTypes)] string keyword,
+            [StandardFactory(GlobalAccessLevels)] AccessLevelInfo typeAccessLevel,
+            [StandardFactory(MemberAccessLevels)] AccessLevelInfo methodAccessLevel)
         {
             string source = $@"
 /// <summary>
 /// no diagnostic here!
 /// </summary>
-public class Outer
+{typeAccessLevel.Keyword} {keyword} Program
 {{
-    protected {keyword} Nested
-    {{ }}
-}}
-";
+    {methodAccessLevel.Keyword} void NoSummary() {{ }}
 
-            int expectedColumn = 16 + keyword.Length;
-
-            VerifyCSharpDiagnostic(source,
-                new DiagnosticResult
-                {
-                    Id = "REVIEW" + ((int)DiagnosticId.MissingOrEmptySummary).ToString("D5"),
-                    Message = string.Format(Resources.MissingSummary_MessageFmt, keyword, "Nested"),
-                    Severity = DiagnosticSeverity.Warning,
-                    Locations = new[] {
-                        new DiagnosticResultLocation("Test0.cs", 7, expectedColumn)
-                    },
-                });
-        }
-
-        [DataTestMethod]
-        [DataRow("class")]
-        [DataRow("interface")]
-        [DataRow("struct")]
-        [DataRow("enum")]
-        public void TestNestedProtectedInternalTypeNoSummary(string keyword)
-        {
-            string source = $@"
-/// <summary>
-/// no diagnostic here!
-/// </summary>
-public class Outer
-{{
-    protected internal {keyword} Nested
-    {{ }}
-}}
-";
-
-            int expectedColumn = 25 + keyword.Length;
-
-            VerifyCSharpDiagnostic(source,
-                new DiagnosticResult
-                {
-                    Id = "REVIEW" + ((int)DiagnosticId.MissingOrEmptySummary).ToString("D5"),
-                    Message = string.Format(Resources.MissingSummary_MessageFmt, keyword, "Nested"),
-                    Severity = DiagnosticSeverity.Warning,
-                    Locations = new[] {
-                        new DiagnosticResultLocation("Test0.cs", 7, expectedColumn)
-                    },
-                });
-        }
-
-        [DataTestMethod]
-        [DataRow("class")]
-        [DataRow("interface")]
-        [DataRow("struct")]
-        [DataRow("enum")]
-        public void TestNestedInternalTypeNoSummary(string keyword)
-        {
-            string source = $@"
-/// <summary>
-/// no diagnostic here!
-/// </summary>
-public class Outer
-{{
-    internal {keyword} Nested
-    {{ }}
-}}
-";
-
-            int expectedColumn = 15 + keyword.Length;
-
-            VerifyCSharpDiagnostic(source);
-        }
-
-        [DataTestMethod]
-        [DataRow("class")]
-        [DataRow("interface")]
-        [DataRow("struct")]
-        [DataRow("enum")]
-        public void TestNestedPrivateTypeNoSummary(string keyword)
-        {
-            string source = $@"
-/// <summary>
-/// no diagnostic here!
-/// </summary>
-public class Outer
-{{
-    private {keyword} Nested
-    {{ }}
-}}
-";
-
-            int expectedColumn = 13 + keyword.Length;
-
-            VerifyCSharpDiagnostic(source);
-        } 
-
-
-        [TestMethod]
-        [DataRow("class")]
-        [DataRow("struct")]
-        public void TestClassAndStructMethods(string keyword)
-        {
-            string source = $@"
-/// <summary>
-/// no diagnostic here!
-/// </summary>
-public {keyword} Program
-{{
-    public void NoSummaryPublic() {{ }}
+    /// <summary>
+    /// 
+    /// </summary>
+    {methodAccessLevel.Keyword} void EmptySummary() {{ }}
 
     /// <summary>
     /// no diagnostic here!
     /// </summary>
-    public void YesSummaryPublic() {{ }}
-
-    protected void NoSummaryProtected() {{ }}
-
-    /// <summary>
-    /// no diagnostic here!
-    /// </summary>
-    protected void YesSummaryProtected() {{ }}
-
-    protected internal void NoSummaryProtectedInternal() {{ }}
-
-    /// <summary>
-    /// no diagnostic here!
-    /// </summary>
-    protected internal void YesSummaryProtectedInternal() {{ }}
-
-    internal void NoSummaryInternal() {{ }}
-
-    /// <summary>
-    /// no diagnostic here!
-    /// </summary>
-    internal void YesSummaryInternal() {{ }}
-
-    private void NoSummaryPrivate() {{ }}
-
-    /// <summary>
-    /// no diagnostic here!
-    /// </summary>
-    private void YesSummaryPrivate() {{ }}
+    {methodAccessLevel.Keyword} void YesSummary() {{ }}
 }}";
 
-            VerifyCSharpDiagnostic(source,
-                new DiagnosticResult
-                {
-                    Id = "REVIEW" + ((int)DiagnosticId.MissingOrEmptySummary).ToString("D5"),
-                    Message = string.Format(Resources.MissingSummary_MessageFmt, "method", "NoSummaryPublic"),
-                    Severity = DiagnosticSeverity.Warning,
-                    Locations = new[] {
-                        new DiagnosticResultLocation("Test0.cs", 7, 17)
+            if (typeAccessLevel.RequiresSummary && methodAccessLevel.RequiresSummary)
+            {
+                int column = 4 + methodAccessLevel.Keyword.Length + 7;
+
+                VerifyCSharpDiagnostic(source,
+                    new DiagnosticResult
+                    {
+                        Id = "REVIEW" + ((int)DiagnosticId.MissingOrEmptySummary).ToString("D5"),
+                        Message = string.Format(Resources.MissingSummary_MessageFmt, "method", "NoSummary"),
+                        Severity = DiagnosticSeverity.Warning,
+                        Locations = new[] {
+                        new DiagnosticResultLocation("Test0.cs", 7, column)
+                        },
                     },
-                },
-                new DiagnosticResult
-                {
-                    Id = "REVIEW" + ((int)DiagnosticId.MissingOrEmptySummary).ToString("D5"),
-                    Message = string.Format(Resources.MissingSummary_MessageFmt, "method", "NoSummaryProtected"),
-                    Severity = DiagnosticSeverity.Warning,
-                    Locations = new[] {
-                        new DiagnosticResultLocation("Test0.cs", 14, 20)
-                    },
-                },
-                new DiagnosticResult
-                {
-                    Id = "REVIEW" + ((int)DiagnosticId.MissingOrEmptySummary).ToString("D5"),
-                    Message = string.Format(Resources.MissingSummary_MessageFmt, "method", "NoSummaryProtectedInternal"),
-                    Severity = DiagnosticSeverity.Warning,
-                    Locations = new[] {
-                        new DiagnosticResultLocation("Test0.cs", 21, 29)
-                    },
-                });
+                    new DiagnosticResult
+                    {
+                        Id = "REVIEW" + ((int)DiagnosticId.MissingOrEmptySummary).ToString("D5"),
+                        Message = string.Format(Resources.EmptySummary_MessageFmt, "method", "EmptySummary"),
+                        Severity = DiagnosticSeverity.Warning,
+                        Locations = new[] {
+                        new DiagnosticResultLocation("Test0.cs", 12, column)
+                        },
+                    });
+            }
+            else
+            {
+                VerifyCSharpDiagnostic(source);
+            }
         }
 
-        [TestMethod]
-        public void TestInterfaceMethod()
+        [CombinatorialTestMethod]
+        public void TestInterfaceMethod(
+            [StandardFactory(GlobalAccessLevels)] AccessLevelInfo typeAccessLevel)
         {
             string source = @"
 /// <summary>
@@ -313,6 +195,11 @@ public {keyword} Program
 public interface Program
 {
     void NoSummary();
+
+    /// <summary>
+    /// 
+    /// </summary>
+    void EmptySummary();
 
     /// <summary>
     /// no diagnostic here!
@@ -329,13 +216,22 @@ public interface Program
                     Locations = new[] {
                         new DiagnosticResultLocation("Test0.cs", 7, 10)
                     },
+                },
+                new DiagnosticResult
+                {
+                    Id = "REVIEW" + ((int)DiagnosticId.MissingOrEmptySummary).ToString("D5"),
+                    Message = string.Format(Resources.EmptySummary_MessageFmt, "method", "EmptySummary"),
+                    Severity = DiagnosticSeverity.Warning,
+                    Locations = new[] {
+                        new DiagnosticResultLocation("Test0.cs", 12, 10)
+                    },
                 });
         }
 
-        [DataTestMethod]
-        [DataRow("class")]
-        [DataRow("struct")]
-        public void TestClassAndStructConstructor(string keyword)
+
+        [CombinatorialTestMethod]
+        public void TestClassAndStructConstructor(
+            [StandardFactory(ClassTypes)] string keyword)
         {
             string source = $@"
 /// <summary>
@@ -346,9 +242,14 @@ public {keyword} Program
     public Program(int noSummary) {{  }}
 
     /// <summary>
+    /// 
+    /// </summary>
+    public Program(double emptySummary) {{  }}
+
+    /// <summary>
     /// no diagnostic here!
     /// </summary>
-    public Program(double yesSummary) {{  }}
+    public Program(string yesSummary) {{  }}
 }}";
 
             VerifyCSharpDiagnostic(source,
@@ -360,14 +261,24 @@ public {keyword} Program
                     Locations = new[] {
                         new DiagnosticResultLocation("Test0.cs", 7, 12)
                     },
+                },
+                new DiagnosticResult
+                {
+                    Id = "REVIEW" + ((int)DiagnosticId.MissingOrEmptySummary).ToString("D5"),
+                    Message = string.Format(Resources.EmptySummary_MessageFmt, "constructor", "Program"),
+                    Severity = DiagnosticSeverity.Warning,
+                    Locations = new[] {
+                        new DiagnosticResultLocation("Test0.cs", 12, 12)
+                    },
                 });
         }
 
 
-        [DataTestMethod]
-        [DataRow("class")]
-        [DataRow("struct")]
-        public void TestClassAndStructConversionOperator(string keyword)
+
+        [CombinatorialTestMethod]
+        public void TestClassAndStructConversionOperator(
+            [StandardFactory(ClassTypes)] string keyword,
+            [StandardFactory(ExplicitImplicit)] string explicitness)
         {
             string source = $@"
 /// <summary>
@@ -375,20 +286,20 @@ public {keyword} Program
 /// </summary>
 public {keyword} Program
 {{
-    public static implicit operator int(Program x) {{ return 0; }}
+    public static {explicitness} operator int(Program noSummary) {{ return 0; }}
+
+    /// <summary>
+    /// 
+    /// </summary>
+    public static {explicitness} operator double(Program emptySummary) {{ return 0; }}
 
     /// <summary>
     /// no diagnostic here!
     /// </summary>
-    public static implicit operator double(Program x) {{ return 0; }}
-
-    public static explicit operator bool(Program x) {{ return 0; }}
-
-    /// <summary>
-    /// no diagnostic here!
-    /// </summary>
-    public static explicit operator string(Program x) {{ return 0; }}
+    public static {explicitness} operator string(Program yesSummary) {{ return 0; }}
 }}";
+
+            int column = 18 + explicitness.Length + 2;
 
             VerifyCSharpDiagnostic(source,
                 new DiagnosticResult
@@ -397,34 +308,37 @@ public {keyword} Program
                     Message = string.Format(Resources.MissingSummary_MessageFmt, string.Empty, "operator int"),
                     Severity = DiagnosticSeverity.Warning,
                     Locations = new[] {
-                        new DiagnosticResultLocation("Test0.cs", 7, 28)
+                        new DiagnosticResultLocation("Test0.cs", 7, column)
                     },
                 },
                 new DiagnosticResult
                 {
                     Id = "REVIEW" + ((int)DiagnosticId.MissingOrEmptySummary).ToString("D5"),
-                    Message = string.Format(Resources.MissingSummary_MessageFmt, string.Empty, "operator bool"),
+                    Message = string.Format(Resources.EmptySummary_MessageFmt, string.Empty, "operator double"),
                     Severity = DiagnosticSeverity.Warning,
                     Locations = new[] {
-                        new DiagnosticResultLocation("Test0.cs", 14, 28)
+                        new DiagnosticResultLocation("Test0.cs", 12, column)
                     },
                 });
         }
 
-        
-        [DataTestMethod]
-        [DataRow("public", true)]
-        [DataRow("internal", false)]
-        [DataRow("", false)]
-        public void TestMembersOfGlobalEnum(string accessLevel, bool expectsDiagnostic)
+
+        [CombinatorialTestMethod]
+        public void TestMembersOfGlobalEnum(
+            [StandardFactory(GlobalAccessLevels)] AccessLevelInfo accessLevel)
         {
             string source = $@"
 /// <summary>
 /// no diagnostic here!
 /// </summary>
-{accessLevel} enum Program
+{accessLevel.Keyword} enum Program
 {{
     NoSummary,
+
+    /// <summary>
+    /// 
+    /// </summary>
+    EmptySummary,
 
     /// <summary>
     /// no diagnostic here!
@@ -432,7 +346,7 @@ public {keyword} Program
     YesSummary,
 }}";
 
-            if (expectsDiagnostic)
+            if (accessLevel.RequiresSummary)
             {
 
                 VerifyCSharpDiagnostic(source,
@@ -444,6 +358,15 @@ public {keyword} Program
                         Locations = new[] {
                         new DiagnosticResultLocation("Test0.cs", 7, 5)
                         },
+                    },
+                    new DiagnosticResult
+                    {
+                        Id = "REVIEW" + ((int)DiagnosticId.MissingOrEmptySummary).ToString("D5"),
+                        Message = string.Format(Resources.EmptySummary_MessageFmt, "enum member", "EmptySummary"),
+                        Severity = DiagnosticSeverity.Warning,
+                        Locations = new[] {
+                        new DiagnosticResultLocation("Test0.cs", 12, 5)
+                        },
                     });
             }
             else
@@ -452,27 +375,28 @@ public {keyword} Program
             }
         }
 
-        [DataTestMethod]
-        [DataRow("public", true)]
-        [DataRow("protected", true)]
-        [DataRow("protected internal", true)]
-        [DataRow("internal", false)]
-        [DataRow("private", false)]
-        [DataRow("", false)]
-        public void TestMembersOfNestedEnum(string accessLevel, bool expectsDiagnostic)
+        [CombinatorialTestMethod]
+        public void TestMembersOfNestedEnum(
+            [StandardFactory(GlobalAccessLevels)] AccessLevelInfo outerAccessLevel,
+            [StandardFactory(MemberAccessLevels)] AccessLevelInfo enumAccessLevel)
         {
             string source = $@"
 /// <summary>
 /// no diagnostic here!
 /// </summary>
-public class Outer
+{outerAccessLevel.Keyword} class Outer
 {{
     /// <summary>
     /// no diagnostic here!
     /// </summary>
-    {accessLevel} enum Program
+    {enumAccessLevel.Keyword} enum Program
     {{
         NoSummary,
+
+        /// <summary>
+        /// 
+        /// </summary>
+        EmptySummary,
 
         /// <summary>
         /// no diagnostic here!
@@ -481,7 +405,7 @@ public class Outer
     }}
 }}";
 
-            if (expectsDiagnostic)
+            if (outerAccessLevel.RequiresSummary && enumAccessLevel.RequiresSummary)
             {
                 VerifyCSharpDiagnostic(source,
                     new DiagnosticResult
@@ -491,6 +415,15 @@ public class Outer
                         Severity = DiagnosticSeverity.Warning,
                         Locations = new[] {
                         new DiagnosticResultLocation("Test0.cs", 12, 9)
+                        },
+                    },
+                    new DiagnosticResult
+                    {
+                        Id = "REVIEW" + ((int)DiagnosticId.MissingOrEmptySummary).ToString("D5"),
+                        Message = string.Format(Resources.EmptySummary_MessageFmt, "enum member", "EmptySummary"),
+                        Severity = DiagnosticSeverity.Warning,
+                        Locations = new[] {
+                        new DiagnosticResultLocation("Test0.cs", 17, 9)
                         },
                     });
             }
@@ -502,12 +435,459 @@ public class Outer
 
 
         [CombinatorialTestMethod]
-        [CombinatorialArgument("i", 0, 1, 2)]
-        [CombinatorialEnumArgument(1, typeof(DiagnosticSeverity))]
-        public void TestingThings(int i, DiagnosticSeverity j)
+        public void TestEventPropertyDeclaration(
+            [StandardFactory(GlobalAccessLevels)] AccessLevelInfo outerAccessLevel,
+            [StandardFactory(MemberAccessLevels)] AccessLevelInfo eventAccessLevel)
         {
-            TestContext.WriteLine($"i = {i};  j = {j}");
+            string source = $@"
+/// <summary>
+/// no diagnostic here!
+/// </summary>
+{outerAccessLevel.Keyword} class Outer
+{{
+    {eventAccessLevel.Keyword} event EventHandler NoSummary
+    {{
+        add {{ }}
+        remove {{ }}
+    }}
+
+    /// <summary>
+    /// 
+    /// </summary>
+    {eventAccessLevel.Keyword} event EventHandler EmptySummary
+    {{
+        add {{ }}
+        remove {{ }}
+    }}
+
+    /// <summary>
+    /// no diagnostic here!
+    /// </summary>
+    {eventAccessLevel.Keyword} event EventHandler YesSummary
+    {{
+        add {{ }}
+        remove {{ }}
+    }}
+}}";
+
+            if (outerAccessLevel.RequiresSummary && eventAccessLevel.RequiresSummary)
+            {
+                int column = 4 + eventAccessLevel.Keyword.Length + 21;
+
+                VerifyCSharpDiagnostic(source,
+                    new DiagnosticResult
+                    {
+                        Id = "REVIEW" + ((int)DiagnosticId.MissingOrEmptySummary).ToString("D5"),
+                        Message = string.Format(Resources.MissingSummary_MessageFmt, "event", "NoSummary"),
+                        Severity = DiagnosticSeverity.Warning,
+                        Locations = new[] {
+                        new DiagnosticResultLocation("Test0.cs", 7, column)
+                        },
+                    },
+                    new DiagnosticResult
+                    {
+                        Id = "REVIEW" + ((int)DiagnosticId.MissingOrEmptySummary).ToString("D5"),
+                        Message = string.Format(Resources.EmptySummary_MessageFmt, "event", "EmptySummary"),
+                        Severity = DiagnosticSeverity.Warning,
+                        Locations = new[] {
+                        new DiagnosticResultLocation("Test0.cs", 16, column)
+                        },
+                    });
+            }
+            else
+            {
+                VerifyCSharpDiagnostic(source);
+            }
         }
+
+
+        [CombinatorialTestMethod]
+        public void TestEventFieldDeclaration(
+            [StandardFactory(GlobalAccessLevels)] AccessLevelInfo outerAccessLevel,
+            [StandardFactory(MemberAccessLevels)] AccessLevelInfo eventAccessLevel)
+        {
+            string source = $@"
+/// <summary>
+/// no diagnostic here!
+/// </summary>
+{outerAccessLevel.Keyword} class Outer
+{{
+    {eventAccessLevel.Keyword} event EventHandler NoSummary;
+
+    /// <summary>
+    /// 
+    /// </summary>
+    {eventAccessLevel.Keyword} event EventHandler EmptySummary;
+
+    /// <summary>
+    /// no diagnostic here!
+    /// </summary>
+    {eventAccessLevel.Keyword} event EventHandler YesSummary;
+}}";
+
+            if (outerAccessLevel.RequiresSummary && eventAccessLevel.RequiresSummary)
+            {
+                int column = 4 + eventAccessLevel.Keyword.Length + 21;
+                VerifyCSharpDiagnostic(source,
+                    new DiagnosticResult
+                    {
+                        Id = "REVIEW" + ((int)DiagnosticId.MissingOrEmptySummary).ToString("D5"),
+                        Message = string.Format(Resources.MissingSummary_MessageFmt, "event", "NoSummary"),
+                        Severity = DiagnosticSeverity.Warning,
+                        Locations = new[] {
+                        new DiagnosticResultLocation("Test0.cs", 7, column)
+                        },
+                    },
+                    new DiagnosticResult
+                    {
+                        Id = "REVIEW" + ((int)DiagnosticId.MissingOrEmptySummary).ToString("D5"),
+                        Message = string.Format(Resources.EmptySummary_MessageFmt, "event", "EmptySummary"),
+                        Severity = DiagnosticSeverity.Warning,
+                        Locations = new[] {
+                        new DiagnosticResultLocation("Test0.cs", 12, column)
+                        },
+                    });
+            }
+            else
+            {
+                VerifyCSharpDiagnostic(source);
+            }
+        }
+
+
+        [CombinatorialTestMethod]
+        public void TestFieldDeclaration(
+            [StandardFactory(GlobalAccessLevels)] AccessLevelInfo outerAccessLevel,
+            [StandardFactory(MemberAccessLevels)] AccessLevelInfo eventAccessLevel)
+        {
+            string source = $@"
+/// <summary>
+/// no diagnostic here!
+/// </summary>
+{outerAccessLevel.Keyword} class Outer
+{{
+    {eventAccessLevel.Keyword} int NoSummary;
+
+    /// <summary>
+    /// 
+    /// </summary>
+    {eventAccessLevel.Keyword} int EmptySummary;
+
+    /// <summary>
+    /// no diagnostic here!
+    /// </summary>
+    {eventAccessLevel.Keyword} int YesSummary;
+}}";
+
+            if (outerAccessLevel.RequiresSummary && eventAccessLevel.RequiresSummary)
+            {
+                int column = 4 + eventAccessLevel.Keyword.Length + 6;
+                VerifyCSharpDiagnostic(source,
+                    new DiagnosticResult
+                    {
+                        Id = "REVIEW" + ((int)DiagnosticId.MissingOrEmptySummary).ToString("D5"),
+                        Message = string.Format(Resources.MissingSummary_MessageFmt, "field", "NoSummary"),
+                        Severity = DiagnosticSeverity.Warning,
+                        Locations = new[] {
+                        new DiagnosticResultLocation("Test0.cs", 7, column)
+                        },
+                    },
+                    new DiagnosticResult
+                    {
+                        Id = "REVIEW" + ((int)DiagnosticId.MissingOrEmptySummary).ToString("D5"),
+                        Message = string.Format(Resources.EmptySummary_MessageFmt, "field", "EmptySummary"),
+                        Severity = DiagnosticSeverity.Warning,
+                        Locations = new[] {
+                        new DiagnosticResultLocation("Test0.cs", 12, column)
+                        },
+                    });
+            }
+            else
+            {
+                VerifyCSharpDiagnostic(source);
+            }
+        }
+
+
+        [CombinatorialTestMethod]
+        public void TestIndexerDeclaration(
+            [StandardFactory(GlobalAccessLevels)] AccessLevelInfo outerAccessLevel,
+            [StandardFactory(MemberAccessLevels)] AccessLevelInfo eventAccessLevel)
+        {
+            string source = $@"
+/// <summary>
+/// no diagnostic here!
+/// </summary>
+{outerAccessLevel.Keyword} class Outer
+{{
+    {eventAccessLevel.Keyword} int this[int noSummary] {{ set {{ }} }}
+
+    /// <summary>
+    /// 
+    /// </summary>
+    {eventAccessLevel.Keyword} int this[double emptySummary] {{ set {{ }} }}
+
+    /// <summary>
+    /// no diagnostic here!
+    /// </summary>
+    {eventAccessLevel.Keyword} int this[string yesSummary] {{ set {{ }} }}
+}}";
+
+            if (outerAccessLevel.RequiresSummary && eventAccessLevel.RequiresSummary)
+            {
+                int column = 4 + eventAccessLevel.Keyword.Length + 6;
+                VerifyCSharpDiagnostic(source,
+                    new DiagnosticResult
+                    {
+                        Id = "REVIEW" + ((int)DiagnosticId.MissingOrEmptySummary).ToString("D5"),
+                        Message = string.Format(Resources.MissingSummary_MessageFmt, "indexer", "this"),
+                        Severity = DiagnosticSeverity.Warning,
+                        Locations = new[] {
+                        new DiagnosticResultLocation("Test0.cs", 7, column)
+                        },
+                    },
+                    new DiagnosticResult
+                    {
+                        Id = "REVIEW" + ((int)DiagnosticId.MissingOrEmptySummary).ToString("D5"),
+                        Message = string.Format(Resources.EmptySummary_MessageFmt, "indexer", "this"),
+                        Severity = DiagnosticSeverity.Warning,
+                        Locations = new[] {
+                        new DiagnosticResultLocation("Test0.cs", 12, column)
+                        },
+                    });
+            }
+            else
+            {
+                VerifyCSharpDiagnostic(source);
+            }
+        }
+
+
+        [CombinatorialTestMethod]
+        public void TestMethodDeclaration(
+            [StandardFactory(GlobalAccessLevels)] AccessLevelInfo outerAccessLevel,
+            [StandardFactory(MemberAccessLevels)] AccessLevelInfo eventAccessLevel)
+        {
+            string source = $@"
+/// <summary>
+/// no diagnostic here!
+/// </summary>
+{outerAccessLevel.Keyword} class Outer
+{{
+    {eventAccessLevel.Keyword} void NoSummary() {{ }}
+
+    /// <summary>
+    /// 
+    /// </summary>
+    {eventAccessLevel.Keyword} void EmptySummary() {{ }}
+
+    /// <summary>
+    /// no diagnostic here!
+    /// </summary>
+    {eventAccessLevel.Keyword} void YesSummary() {{ }}
+}}";
+
+            if (outerAccessLevel.RequiresSummary && eventAccessLevel.RequiresSummary)
+            {
+                int column = 4 + eventAccessLevel.Keyword.Length + 7;
+                VerifyCSharpDiagnostic(source,
+                    new DiagnosticResult
+                    {
+                        Id = "REVIEW" + ((int)DiagnosticId.MissingOrEmptySummary).ToString("D5"),
+                        Message = string.Format(Resources.MissingSummary_MessageFmt, "method", "NoSummary"),
+                        Severity = DiagnosticSeverity.Warning,
+                        Locations = new[] {
+                        new DiagnosticResultLocation("Test0.cs", 7, column)
+                        },
+                    },
+                    new DiagnosticResult
+                    {
+                        Id = "REVIEW" + ((int)DiagnosticId.MissingOrEmptySummary).ToString("D5"),
+                        Message = string.Format(Resources.EmptySummary_MessageFmt, "method", "EmptySummary"),
+                        Severity = DiagnosticSeverity.Warning,
+                        Locations = new[] {
+                        new DiagnosticResultLocation("Test0.cs", 12, column)
+                        },
+                    });
+            }
+            else
+            {
+                VerifyCSharpDiagnostic(source);
+            }
+        }
+
+
+        [CombinatorialTestMethod]
+        public void TestUnaryOperatorDeclaration(
+            [StandardFactory(GlobalAccessLevels)] AccessLevelInfo outerAccessLevel,
+            [StandardFactory(OverloadableUnaryOperators)] OperatorInfo operatorInfo)
+        {
+            string source = $@"
+/// <summary>
+/// no diagnostic here!
+/// </summary>
+{outerAccessLevel.Keyword} class Outer
+{{
+    public static bool operator {operatorInfo.Token}(Outer noSummary) {{ return false; }}
+}}
+
+/// <summary>
+/// no diagnostic here!
+/// </summary>
+{outerAccessLevel.Keyword} class Outer2
+{{
+    /// <summary>
+    /// 
+    /// </summary>
+    public static bool operator {operatorInfo.Token}(Outer2 emptySummary) {{ return false; }}
+}}
+
+/// <summary>
+/// no diagnostic here!
+/// </summary>
+{outerAccessLevel.Keyword} class Outer2
+{{
+    /// <summary>
+    /// no diagnostic here!
+    /// </summary>
+    public static bool operator {operatorInfo.Token}(Outer2 yesSummary) {{ return false; }}
+}}";
+
+            if (outerAccessLevel.RequiresSummary)
+            {
+                VerifyCSharpDiagnostic(source,
+                    new DiagnosticResult
+                    {
+                        Id = "REVIEW" + ((int)DiagnosticId.MissingOrEmptySummary).ToString("D5"),
+                        Message = string.Format(Resources.MissingSummary_MessageFmt, "operator", operatorInfo.Token),
+                        Severity = DiagnosticSeverity.Warning,
+                        Locations = new[] {
+                        new DiagnosticResultLocation("Test0.cs", 7, 24)
+                        },
+                    },
+                    new DiagnosticResult
+                    {
+                        Id = "REVIEW" + ((int)DiagnosticId.MissingOrEmptySummary).ToString("D5"),
+                        Message = string.Format(Resources.EmptySummary_MessageFmt, "operator", operatorInfo.Token),
+                        Severity = DiagnosticSeverity.Warning,
+                        Locations = new[] {
+                        new DiagnosticResultLocation("Test0.cs", 18, 24)
+                        },
+                    });
+            }
+            else
+            {
+                VerifyCSharpDiagnostic(source);
+            }
+        }
+
+
+        [CombinatorialTestMethod]
+        public void TestBinaryOperatorDeclaration(
+            [StandardFactory(GlobalAccessLevels)] AccessLevelInfo outerAccessLevel,
+            [StandardFactory(OverloadableBinaryOperators)] OperatorInfo operatorInfo)
+        {
+            string source = $@"
+/// <summary>
+/// no diagnostic here!
+/// </summary>
+{outerAccessLevel.Keyword} class Outer
+{{
+    public static bool operator {operatorInfo.Token}(Outer noSummary, int i) {{ return false; }}
+
+    /// <summary>
+    /// 
+    /// </summary>
+    public static bool operator {operatorInfo.Token}(Outer emptySummary, double i) {{ return false; }}
+
+    /// <summary>
+    /// no diagnostic here!
+    /// </summary>
+    public static bool operator {operatorInfo.Token}(Outer yesSummary, string i) {{ return false; }}
+}}";
+
+            if (outerAccessLevel.RequiresSummary)
+            {
+                VerifyCSharpDiagnostic(source,
+                    new DiagnosticResult
+                    {
+                        Id = "REVIEW" + ((int)DiagnosticId.MissingOrEmptySummary).ToString("D5"),
+                        Message = string.Format(Resources.MissingSummary_MessageFmt, "operator", operatorInfo.Token),
+                        Severity = DiagnosticSeverity.Warning,
+                        Locations = new[] {
+                        new DiagnosticResultLocation("Test0.cs", 7, 24)
+                        },
+                    },
+                    new DiagnosticResult
+                    {
+                        Id = "REVIEW" + ((int)DiagnosticId.MissingOrEmptySummary).ToString("D5"),
+                        Message = string.Format(Resources.EmptySummary_MessageFmt, "operator", operatorInfo.Token),
+                        Severity = DiagnosticSeverity.Warning,
+                        Locations = new[] {
+                        new DiagnosticResultLocation("Test0.cs", 12, 24)
+                        },
+                    });
+            }
+            else
+            {
+                VerifyCSharpDiagnostic(source);
+            }
+        }
+
+
+        [CombinatorialTestMethod]
+        public void TestPropertyDeclaration(
+            [StandardFactory(GlobalAccessLevels)] AccessLevelInfo outerAccessLevel,
+            [StandardFactory(MemberAccessLevels)] AccessLevelInfo propertyAccessLevel)
+        {
+            string source = $@"
+/// <summary>
+/// no diagnostic here!
+/// </summary>
+{outerAccessLevel.Keyword} class Outer
+{{
+    {propertyAccessLevel.Keyword} int NoSummary {{ get {{ return 0; }} }}
+
+    /// <summary>
+    /// 
+    /// </summary>
+    {propertyAccessLevel.Keyword} int EmptySummary {{ get {{ return 0; }} }}
+
+    /// <summary>
+    /// no diagnostic here!
+    /// </summary>
+    {propertyAccessLevel.Keyword} int YesSummary {{ get {{ return 0; }} }}
+}}";
+
+            if (outerAccessLevel.RequiresSummary && propertyAccessLevel.RequiresSummary)
+            {
+                int column = 4 + propertyAccessLevel.Keyword.Length + 6;
+                VerifyCSharpDiagnostic(source,
+                    new DiagnosticResult
+                    {
+                        Id = "REVIEW" + ((int)DiagnosticId.MissingOrEmptySummary).ToString("D5"),
+                        Message = string.Format(Resources.MissingSummary_MessageFmt, "property", "NoSummary"),
+                        Severity = DiagnosticSeverity.Warning,
+                        Locations = new[] {
+                        new DiagnosticResultLocation("Test0.cs", 7, column)
+                        },
+                    },
+                    new DiagnosticResult
+                    {
+                        Id = "REVIEW" + ((int)DiagnosticId.MissingOrEmptySummary).ToString("D5"),
+                        Message = string.Format(Resources.EmptySummary_MessageFmt, "property", "EmptySummary"),
+                        Severity = DiagnosticSeverity.Warning,
+                        Locations = new[] {
+                        new DiagnosticResultLocation("Test0.cs", 12, column)
+                        },
+                    });
+            }
+            else
+            {
+                VerifyCSharpDiagnostic(source);
+            }
+        }
+
 
         protected override DiagnosticAnalyzer GetCSharpDiagnosticAnalyzer()
         {

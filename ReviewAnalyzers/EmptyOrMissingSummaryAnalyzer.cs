@@ -15,6 +15,10 @@ using ReviewAnalyzers.Properties;
 
 namespace ReviewAnalyzers
 {
+    /// <summary>
+    /// Analyzer which checks for empty or missing <![CDATA[<summary>]]> documentation comments on
+    /// types and members that are publicly visible.
+    /// </summary>
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
     public sealed class EmptyOrMissingSummaryAnalyzer : BaseAnalyzer
     {
@@ -157,58 +161,6 @@ namespace ReviewAnalyzers
             }
         }
 
-        private static void AnalyzeMethodDeclaration(SyntaxNodeAnalysisContext context)
-        {
-            var node = context.Node as MethodDeclarationSyntax;
-            Debug.Assert(node != null);
-
-            if (IsPublicOrProtected(node))
-            {
-                switch (AnalyzeSummary(node))
-                {
-                    case SummaryState.Valid:
-                        // all's good - nothing to report.
-                        break;
-
-                    case SummaryState.Empty:
-                        Report(context, EmptyRule, node.Identifier.GetLocation(), node.Identifier.ToString());
-                        break;
-
-                    default:
-                    case SummaryState.Missing:
-                        Report(context, MissingRule, node.Identifier.GetLocation(), node.Identifier.ToString());
-                        break;
-                }
-            }
-        }
-
-        private static void AnalyzeOperatorDeclaration(SyntaxNodeAnalysisContext context)
-        {
-            var node = context.Node as OperatorDeclarationSyntax;
-            Debug.Assert(node != null);
-
-            if (IsPublicOrProtected(node))
-            {
-                string ident = node.OperatorKeyword.ToString() + " " + node.OperatorToken.ToString();
-
-                switch (AnalyzeSummary(node))
-                {
-                    case SummaryState.Valid:
-                        // all's good - nothing to report.
-                        break;
-
-                    case SummaryState.Empty:
-                        Report(context, EmptyRule, node.OperatorKeyword.GetLocation(), ident);
-                        break;
-
-                    default:
-                    case SummaryState.Missing:
-                        Report(context, MissingRule, node.OperatorKeyword.GetLocation(), ident);
-                        break;
-                }
-            }
-        }
-
         private static void AnalyzeConversionOperatorDeclaration(SyntaxNodeAnalysisContext context)
         {
             var node = context.Node as ConversionOperatorDeclarationSyntax;
@@ -342,6 +294,58 @@ namespace ReviewAnalyzers
             }
         }
 
+        private static void AnalyzeMethodDeclaration(SyntaxNodeAnalysisContext context)
+        {
+            var node = context.Node as MethodDeclarationSyntax;
+            Debug.Assert(node != null);
+
+            if (IsPublicOrProtected(node))
+            {
+                switch (AnalyzeSummary(node))
+                {
+                    case SummaryState.Valid:
+                        // all's good - nothing to report.
+                        break;
+
+                    case SummaryState.Empty:
+                        Report(context, EmptyRule, node.Identifier.GetLocation(), node.Identifier.ToString());
+                        break;
+
+                    default:
+                    case SummaryState.Missing:
+                        Report(context, MissingRule, node.Identifier.GetLocation(), node.Identifier.ToString());
+                        break;
+                }
+            }
+        }
+
+        private static void AnalyzeOperatorDeclaration(SyntaxNodeAnalysisContext context)
+        {
+            var node = context.Node as OperatorDeclarationSyntax;
+            Debug.Assert(node != null);
+
+            if (IsPublicOrProtected(node))
+            {
+                string ident = node.OperatorToken.ToString();
+
+                switch (AnalyzeSummary(node))
+                {
+                    case SummaryState.Valid:
+                        // all's good - nothing to report.
+                        break;
+
+                    case SummaryState.Empty:
+                        Report(context, EmptyRule, node.OperatorKeyword.GetLocation(), ident);
+                        break;
+
+                    default:
+                    case SummaryState.Missing:
+                        Report(context, MissingRule, node.OperatorKeyword.GetLocation(), ident);
+                        break;
+                }
+            }
+        }
+
         private static void AnalyzePropertyDeclaration(SyntaxNodeAnalysisContext context)
         {
             var node = context.Node as PropertyDeclarationSyntax;
@@ -410,6 +414,20 @@ namespace ReviewAnalyzers
                 case BaseMethodDeclarationSyntax methodDecl:
                     if (!HasPublicOrProtectedModifier(methodDecl.Modifiers) &&
                         methodDecl.Parent.Kind() != SyntaxKind.InterfaceDeclaration)
+                    {
+                        return false;
+                    }
+                    goto default;
+
+                case BasePropertyDeclarationSyntax propertyDecl:
+                    if (!HasPublicOrProtectedModifier(propertyDecl.Modifiers))
+                    {
+                        return false;
+                    }
+                    goto default;
+
+                case BaseFieldDeclarationSyntax fieldDecl:
+                    if (!HasPublicOrProtectedModifier(fieldDecl.Modifiers))
                     {
                         return false;
                     }
@@ -508,7 +526,7 @@ namespace ReviewAnalyzers
                 [SyntaxKind.FieldDeclaration]              = "field",
                 [SyntaxKind.IndexerDeclaration]            = "indexer",
                 [SyntaxKind.MethodDeclaration]             = "method",
-                [SyntaxKind.OperatorDeclaration]           = string.Empty,
+                [SyntaxKind.OperatorDeclaration]           = "operator",
                 [SyntaxKind.PropertyDeclaration]           = "property",
             };
     }

@@ -90,6 +90,26 @@ namespace ReviewAnalyzers.Test.Helpers
         private void VerifyDiagnostics(string[] sources, string language, DiagnosticAnalyzer analyzer, params DiagnosticResult[] expected)
         {
             var diagnostics = GetSortedDiagnostics(sources, language, analyzer);
+
+            if (TestContext != null)
+            {
+                TestContext.WriteLine(string.Empty);
+                TestContext.WriteLine(ContextLogSeparatorLine);
+                TestContext.WriteLine("Expected Diagnostics:");
+
+                foreach (var d in expected)
+                {
+                    TestContext.WriteLine(ContextLogSeparatorLine);
+                    TestContext.WriteLine("Severity: " + d.Severity);
+                    TestContext.WriteLine("ID: " + d.Id);
+                    TestContext.WriteLine("Message: " + d.Message);
+                    TestContext.WriteLine("Document: " + d.Path);
+                    TestContext.WriteLine($"Start: ln {d.Line}, ch {d.Column}");
+                }
+
+                TestContext.WriteLine(ContextLogSeparatorLine);
+            }
+
             VerifyDiagnosticResults(diagnostics, analyzer, expected);
         }
 
