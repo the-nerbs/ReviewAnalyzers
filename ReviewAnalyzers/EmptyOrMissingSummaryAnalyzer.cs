@@ -73,6 +73,10 @@ namespace ReviewAnalyzers
                 SyntaxKind.ConversionOperatorDeclaration
             );
 
+            context.RegisterSyntaxNodeAction(AnalyzeDelegateDeclaration,
+                SyntaxKind.DelegateDeclaration
+            );
+
             context.RegisterSyntaxNodeAction(AnalyzeEnumMemberDeclaration,
                 SyntaxKind.EnumMemberDeclaration
             );
@@ -175,6 +179,31 @@ namespace ReviewAnalyzers
                     default:
                     case SummaryState.Missing:
                         Report(context, MissingRule, node.OperatorKeyword.GetLocation(), ident);
+                        break;
+                }
+            }
+        }
+
+        private static void AnalyzeDelegateDeclaration(SyntaxNodeAnalysisContext context)
+        {
+            var node = context.Node as DelegateDeclarationSyntax;
+            Debug.Assert(node != null);
+
+            if (IsPublicOrProtected(node))
+            {
+                switch (AnalyzeSummary(node))
+                {
+                    case SummaryState.Valid:
+                        // all's good - nothing to report.
+                        break;
+
+                    case SummaryState.Empty:
+                        Report(context, EmptyRule, node.Identifier.GetLocation(), node.Identifier.ToString());
+                        break;
+
+                    default:
+                    case SummaryState.Missing:
+                        Report(context, MissingRule, node.Identifier.GetLocation(), node.Identifier.ToString());
                         break;
                 }
             }
@@ -402,6 +431,13 @@ namespace ReviewAnalyzers
                     }
                     goto default;
 
+                case DelegateDeclarationSyntax delegateDecl:
+                    if (!HasPublicOrProtectedModifier(delegateDecl.Modifiers))
+                    {
+                        return false;
+                    }
+                    goto default;
+
                     // note: includes method, ctor, finalizer, operator, conversion operator, ...
                 case BaseMethodDeclarationSyntax methodDecl:
                     if (!HasPublicOrProtectedModifier(methodDecl.Modifiers) &&
@@ -570,6 +606,7 @@ namespace ReviewAnalyzers
                 [SyntaxKind.EnumDeclaration]               = "enum",
                 [SyntaxKind.ConstructorDeclaration]        = "constructor",
                 [SyntaxKind.ConversionOperatorDeclaration] = string.Empty,
+                [SyntaxKind.DelegateDeclaration]           = "delegate",
                 [SyntaxKind.EnumMemberDeclaration]         = "enum member",
                 [SyntaxKind.EventDeclaration]              = "event",
                 [SyntaxKind.EventFieldDeclaration]         = "event",

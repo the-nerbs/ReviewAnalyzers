@@ -60,6 +60,7 @@ namespace ReviewAnalyzers.Test
         [CombinatorialTestMethod]
         public void TestNestedType(
             [StandardFactory(SummaryComments)] SummaryComment summary,
+            [StandardFactory(GlobalAccessLevels)] AccessLevelInfo outerAccessLevel,
             [StandardFactory(AllObjectTypes)] string outerType,
             [StandardFactory(MemberAccessLevels)] AccessLevelInfo accessLevel)
         {
@@ -67,13 +68,13 @@ namespace ReviewAnalyzers.Test
 /// <summary>
 /// no diagnostic here!
 /// </summary>
-public class Outer
+{outerAccessLevel.Keyword} class Outer
 {{
     {summary.Text}
     {accessLevel.Keyword} {outerType} Test {{ }}
 }}";
 
-            if (summary.ExpectsDiagnostic && accessLevel.RequiresSummary)
+            if (summary.ExpectsDiagnostic && outerAccessLevel.RequiresSummary && accessLevel.RequiresSummary)
             {
                 int line = 7 + summary.LineLength + 1;
                 int column = 4 + accessLevel.Keyword.Length + 1 + outerType.Length + 2;
@@ -99,20 +100,23 @@ public class Outer
         [CombinatorialTestMethod]
         public void TestClassAndStructConstructor(
             [StandardFactory(SummaryComments)] SummaryComment summary,
-            [StandardFactory(ClassTypes)] string outerType)
+            [StandardFactory(GlobalAccessLevels)] AccessLevelInfo outerAccessLevel,
+            [StandardFactory(ClassTypes)] string outerType,
+            [StandardFactory(MemberAccessLevels)] AccessLevelInfo ctorAccessLevel)
         {
             string source = $@"
 /// <summary>
 /// no diagnostic here!
 /// </summary>
-public {outerType} Test
+{outerAccessLevel.Keyword} {outerType} Test
 {{
     {summary.Text}
-    public Test() {{ }}
+    {ctorAccessLevel.Keyword} Test() {{ }}
 }}";
-            if (summary.ExpectsDiagnostic)
+            if (summary.ExpectsDiagnostic && outerAccessLevel.RequiresSummary && ctorAccessLevel.RequiresSummary)
             {
                 int line = 7 + summary.LineLength + 1;
+                int column = 4 + ctorAccessLevel.Keyword.Length + 2;
 
                 VerifyCSharpDiagnostic(source,
                     new DiagnosticResult
@@ -121,9 +125,13 @@ public {outerType} Test
                         Message = string.Format(summary.ExpectedMessageFmt, "constructor", "Test"),
                         Severity = DiagnosticSeverity.Warning,
                         Locations = new[] {
-                            new DiagnosticResultLocation("Test0.cs", line, 12)
+                            new DiagnosticResultLocation("Test0.cs", line, column)
                         },
                     });
+            }
+            else
+            {
+                VerifyCSharpDiagnostic(source);
             }
         }
 
@@ -131,6 +139,7 @@ public {outerType} Test
         [CombinatorialTestMethod]
         public void TestClassAndStructConversionOperator(
             [StandardFactory(SummaryComments)] SummaryComment summary,
+            [StandardFactory(GlobalAccessLevels)] AccessLevelInfo outerAccessLevel,
             [StandardFactory(ClassTypes)] string outerType,
             [StandardFactory(ExplicitImplicit)] string explicitness)
         {
@@ -138,13 +147,13 @@ public {outerType} Test
 /// <summary>
 /// no diagnostic here!
 /// </summary>
-public {outerType} Program
+{outerAccessLevel.Keyword} {outerType} Program
 {{
     {summary.Text}
     public static {explicitness} operator int(Program noSummary) {{ return 0; }}
 }}";
 
-            if (summary.ExpectsDiagnostic)
+            if (summary.ExpectsDiagnostic && outerAccessLevel.RequiresSummary)
             {
                 int line = 7 + summary.LineLength + 1;
                 int column = 18 + explicitness.Length + 2;
@@ -160,8 +169,81 @@ public {outerType} Program
                         },
                     });
             }
+            else
+            {
+                VerifyCSharpDiagnostic(source);
+            }
         }
 
+        [CombinatorialTestMethod]
+        public void TestDelegateDeclaration(
+            [StandardFactory(SummaryComments)] SummaryComment summary,
+            [StandardFactory(GlobalAccessLevels)] AccessLevelInfo accessLevel)
+        {
+            string source = $@"
+{summary.Text}
+{accessLevel.Keyword} delegate void Test();";
+
+            if (summary.ExpectsDiagnostic && accessLevel.RequiresSummary)
+            {
+                int line = 2 + summary.LineLength + 1;
+                int column = accessLevel.Keyword.Length + 16;
+
+                VerifyCSharpDiagnostic(source,
+                    new DiagnosticResult
+                    {
+                        Id = "REVIEW" + ((int)DiagnosticId.MissingOrEmptySummary).ToString("D5"),
+                        Message = string.Format(summary.ExpectedMessageFmt, "delegate", "Test"),
+                        Severity = DiagnosticSeverity.Warning,
+                        Locations = new[] {
+                            new DiagnosticResultLocation("Test0.cs", line, column)
+                        },
+                    });
+            }
+            else
+            {
+                VerifyCSharpDiagnostic(source);
+            }
+        }
+
+        [CombinatorialTestMethod]
+        public void TestNestedDelegateDeclaration(
+            [StandardFactory(SummaryComments)] SummaryComment summary,
+            [StandardFactory(GlobalAccessLevels)] AccessLevelInfo outerAccessLevel,
+            [StandardFactory(ClassTypes)] string outerType,
+            [StandardFactory(MemberAccessLevels)] AccessLevelInfo delegateAccessLevel)
+        {
+            string source = $@"
+/// <summary>
+/// no diagnostic here!
+/// </summary>
+{outerAccessLevel.Keyword} {outerType} Outer
+{{
+    {summary.Text}
+    {delegateAccessLevel.Keyword} delegate void Test();
+}}";
+
+            if (summary.ExpectsDiagnostic && outerAccessLevel.RequiresSummary && delegateAccessLevel.RequiresSummary)
+            {
+                int line = 7 + summary.LineLength + 1;
+                int column = 4 + delegateAccessLevel.Keyword.Length + 16;
+
+                VerifyCSharpDiagnostic(source,
+                    new DiagnosticResult
+                    {
+                        Id = "REVIEW" + ((int)DiagnosticId.MissingOrEmptySummary).ToString("D5"),
+                        Message = string.Format(summary.ExpectedMessageFmt, "delegate", "Test"),
+                        Severity = DiagnosticSeverity.Warning,
+                        Locations = new[] {
+                            new DiagnosticResultLocation("Test0.cs", line, column)
+                        },
+                    });
+            }
+            else
+            {
+                VerifyCSharpDiagnostic(source);
+            }
+        }
 
         [CombinatorialTestMethod]
         public void TestMembersOfGlobalEnum(
@@ -457,13 +539,13 @@ public {outerType} Program
 /// <summary>
 /// no diagnostic here!
 /// </summary>
-public interface Program
+{typeAccessLevel.Keyword} interface Program
 {{
     {summary.Text}
     void Test();
 }}";
 
-            if (summary.ExpectsDiagnostic)
+            if (summary.ExpectsDiagnostic && typeAccessLevel.RequiresSummary)
             {
                 int line = 7 + summary.LineLength + 1;
 
@@ -477,6 +559,10 @@ public interface Program
                         new DiagnosticResultLocation("Test0.cs", line, 10)
                         },
                     });
+            }
+            else
+            {
+                VerifyCSharpDiagnostic(source);
             }
         }
 
