@@ -1,0 +1,83 @@
+﻿<Application x:Class="Standalone.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             StartupUri="Views/MainWindow.xaml">
+  <Application.Resources>
+
+    <BitmapImage x:Key="FolderImg"
+                 UriSource="Resources/Folder.png" />
+
+    <BitmapImage x:Key="FolderOpenImg"
+                 UriSource="Resources/FolderOpen.png" />
+    
+
+    <!-- Solution images -->
+    <BitmapImage x:Key="SolutionImg"
+                 UriSource="Resources/Solution.png" />
+
+    <!-- Project type images -->
+    <BitmapImage x:Key="CppProjectImg"
+                 UriSource="Resources/CppProject.png" />
+
+    <BitmapImage x:Key="CSharpProjectImg"
+                 UriSource="Resources/CSharpProject.png" />
+
+    <BitmapImage x:Key="DatabaseProjectImg"
+                 UriSource="Resources/DatabaseProject.png" />
+
+    <BitmapImage x:Key="FSharpProjectImg"
+                 UriSource="Resources/FSharpProject.png" />
+
+    <BitmapImage x:Key="GenericProjectImg"
+                 UriSource="Resources/GenericProject.png" />
+
+    <BitmapImage x:Key="ModelingProjectImg"
+                 UriSource="Resources/ModelingProject.png" />
+
+    <BitmapImage x:Key="PythonProjectImg"
+                 UriSource="Resources/PythonProject.png" />
+
+    <BitmapImage x:Key="RubyProjectImg"
+                 UriSource="Resources/RubyProject.png" />
+
+    <BitmapImage x:Key="VBProjectImg"
+                 UriSource="Resources/VBProject.png" />
+
+    <!-- Item type images -->
+    <BitmapImage x:Key="UnknownItemImg"
+                 UriSource="Resources/UnknownItem.png" />
+    
+    <BitmapImage x:Key="CppItemImg"
+                 UriSource="Resources/CppItem.png" />
+
+    <BitmapImage x:Key="CSharpItemImg"
+                 UriSource="Resources/CSharpItem.png" />
+
+    <BitmapImage x:Key="CssItemImg"
+                 UriSource="Resources/CssItem.png" />
+
+    <BitmapImage x:Key="FSharpItemImg"
+                 UriSource="Resources/FSharpItem.png" />
+
+    <BitmapImage x:Key="PropsItemImg"
+                 UriSource="Resources/PropsItem.png" />
+    
+    <BitmapImage x:Key="PythonItemImg"
+                 UriSource="Resources/PythonItem.png" />
+    
+    <BitmapImage x:Key="RubyItemImg"
+                 UriSource="Resources/RubyItem.png" />
+    
+    <BitmapImage x:Key="TextItemImg"
+                 UriSource="Resources/TextItem.png" />
+    
+    <BitmapImage x:Key="VBItemImg"
+                 UriSource="Resources/VBItem.png" />
+
+    <BitmapImage x:Key="XmlItemImg"
+                 UriSource="Resources/XmlItem.png" />
+
+    <BitmapImage x:Key="XmlSchemaItemImg"
+                 UriSource="Resources/XmlSchemaItem.png" />
+  </Application.Resources>
+</Application>
