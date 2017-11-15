@@ -22,6 +22,7 @@ namespace Standalone
 
         private static readonly HashSet<string> IgnoreItems = new HashSet<string>()
         {
+            "ProjectConfiguration",
             "Reference",
             "ProjectReference",
             "Analyzer",

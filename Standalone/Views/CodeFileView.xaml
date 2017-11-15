@@ -30,7 +30,9 @@
 
     <TabItem Header="Source">
       <avalon:TextEditor x:Name="sourceView"
-                         IsReadOnly="True" />
+                         IsReadOnly="True"
+                         MouseHover="HandleMouseHover"
+                         MouseHoverStopped="HandleMouseHoverStopped" />
     </TabItem>
     
   </TabControl>

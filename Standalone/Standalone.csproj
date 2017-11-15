@@ -166,13 +166,14 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="AvalonEditAddIns\ITextMarker.cs" />
+    <Compile Include="AvalonEditAddIns\TextMarkerService.cs" />
     <Compile Include="Command.cs" />
     <Compile Include="Models\FolderModel.cs" />
     <Compile Include="Models\ItemType.cs" />
     <Compile Include="Models\ProjectType.cs" />
     <Compile Include="SolutionParser.cs" />
     <Compile Include="SourceAnalyzer.cs" />
-    <Compile Include="SourceHighlightRenderer.cs" />
     <Compile Include="ViewModels\CodeFileViewModel.cs" />
     <Compile Include="ViewModels\MainViewModel.cs" />
     <Compile Include="Views\CodeFileView.xaml.cs">
